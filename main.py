@@ -19,14 +19,17 @@ def main(page: ft.Page):
     hint = "https://docs.google.com/spreadsheets..."
     url_textfield = ft.Ref[ft.TextField]()
     download_button = ft.Ref[ft.CupertinoButton]()
+    progress_container = ft.Ref[ft.Column]()
+    progress_bar = ft.Ref[ft.ProgressBar]()
 
     # On-Click Button event of generate CSV button
     def download_button_event(e):
         url = url_textfield.current.value
         if url:
             download_button.current.disabled = True
+            progress_container.current.visible = True
             page.update()
-            reader.generate_csv_report(url, download_button, page)
+            # reader.generate_csv_report(url, download_button, page)
         else:
             print("INVALID GSHEET URL...")
 
@@ -38,6 +41,15 @@ def main(page: ft.Page):
                                  label="Gsheet URL:",
                                  border_color=ft.colors.GREY_500,
                                  hint_text=hint),
+
+                    ft.Column([
+                        ft.Text("Downloading Sheets..."),
+                        ft.ProgressBar(ref=progress_bar, bar_height=8,
+                                       border_radius=ft.border_radius.all(5),
+                                       color=ft.colors.GREEN_400,
+                                       value=0.6)
+                    ], ref=progress_container, visible=False),
+
                     ft.Row([
                         ft.CupertinoButton(
                             ref=download_button,
@@ -52,7 +64,7 @@ def main(page: ft.Page):
                     ], alignment=ft.MainAxisAlignment.END)
                 ], spacing=20
             ), padding=20,
-        ), height=180
+        ),
     )
 
     page.add(url_card_container)

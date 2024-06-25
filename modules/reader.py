@@ -44,11 +44,17 @@ def generate_csv_report(url, button: ft.Ref, page: ft.Page):
         # Column H(8) - Processed
         # Column I(9) - Start Time
         # Column J(10) - End Time
+        print("getting names...")
         names = sheet.col_values(4)
+        print("getting date-times...")
         date_times = sheet.col_values(5)
+        print("getting task names...")
         task_names = sheet.col_values(6)
+        print("getting num_processed...")
         num_processed = sheet.col_values(8)
+        print("getting start_times...")
         start_times = sheet.col_values(9)
+        print("getting end_times...")
         end_times = sheet.col_values(10)
 
         # Format the times to datetime object
@@ -76,11 +82,12 @@ def generate_csv_report(url, button: ft.Ref, page: ft.Page):
     # Create the csv file
     filename = "kpi_records.csv"
     with open(filename, 'w') as csvfile:
+        print("generating csv file...")
         csvwriter = csv.writer(csvfile)
         csvwriter.writerow(headers)
         csvwriter.writerows(final_data)
 
-    # Activate again the passed button
-    button.current.disabled = False
-    page.update()
+        # Activate again the passed button
+        button.current.disabled = False
+        page.update()
     
