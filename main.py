@@ -8,7 +8,7 @@ def set_window_properties(page: ft.Page):
     page.window.height = 600
     page.window.resizable = False
     page.window.always_on_top = True
-    page.window.center()
+    # page.window.center()
     page.theme_mode = ft.ThemeMode.DARK
 
 
@@ -54,8 +54,10 @@ def main(page: ft.Page):
     # Flet Control References
     gsheet_url = ft.Ref[ft.TextField]()
     download_button = ft.Ref[ft.CupertinoButton]()
+    add_url_button = ft.Ref[ft.FilledButton]()
     progress_container = ft.Ref[ft.Column]()
     progress_bar = ft.Ref[ft.ProgressBar]()
+    gsheets_url_column = ft.Ref[ft.Column]()
 
     # On-Click Button event of generate CSV button
     def download_button_event(e):
@@ -68,6 +70,15 @@ def main(page: ft.Page):
         else:
             print("INVALID GSHEET URL...")
 
+    # Add URL Button Event
+    def add_url_button_event(e):
+        item = ft.Container(content=ft.Row([
+            ft.Text("LINK")
+        ]), bgcolor=ft.colors.BLUE_GREY_800, padding=10)
+
+        gsheets_url_column.current.controls.append(item)
+        page.update()
+
     # Google Sheet Adder Card
     hint = "https://docs.google.com/spreadsheets/..."
     sheet_url_card = ft.Card(
@@ -78,10 +89,12 @@ def main(page: ft.Page):
                              border_color=ft.colors.GREY_500,
                              hint_text=hint,
                              expand=3),
-                ft.FilledButton(text="ADD URL",
+                ft.FilledButton(ref=add_url_button,
+                                text="ADD URL",
                                 icon="add_link_sharp", height=50,
                                 expand=1,
-                                style=add_url_style)
+                                style=add_url_style,
+                                on_click=add_url_button_event)
             ], spacing=20), padding=20,
         ),
     )
@@ -98,7 +111,14 @@ def main(page: ft.Page):
                          ]),
                          bgcolor=ft.colors.BLUE_GREY_900,
                          padding=ft.padding.only(20, 8, 20, 10),
-                         border_radius=ft.border_radius.only(12, 12, 0, 0))
+                         border_radius=ft.border_radius.only(12, 12, 0, 0)),
+
+            ft.Container(content=ft.Column([],
+                         ref=gsheets_url_column, spacing=15,
+                         scroll=ft.ScrollMode.AUTO, height=250),
+                         padding=ft.padding.all(10),
+                         margin=ft.margin.only(5, 0, 5, 0),
+                         border_radius=5)
         ]),
         height=350, width=800
     )
