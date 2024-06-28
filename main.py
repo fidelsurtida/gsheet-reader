@@ -72,12 +72,29 @@ def main(page: ft.Page):
 
     # Add URL Button Event
     def add_url_button_event(e):
-        item = ft.Container(content=ft.Row([
-            ft.Text("LINK")
-        ]), bgcolor=ft.colors.BLUE_GREY_800, padding=10)
+        url = gsheet_url.current.value
+        if url:
+            item = ft.Container(content=ft.Row([
+                ft.Row([
+                    ft.Icon("file_present_rounded"),
+                    ft.Text(gsheet_url.current.value)
+                ]),
+                ft.Row([
+                    ft.Container(ft.Text("Department Text"),
+                                 bgcolor=ft.colors.TEAL_500,
+                                 border_radius=8,
+                                 padding=ft.padding.symmetric(3, 10)),
+                    ft.IconButton(icon="delete_forever",
+                                  icon_color=ft.colors.RED_300),
+                    ft.ProgressRing(height=20, width=20)
+                ])
+            ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN
+            ), bgcolor=ft.colors.BLUE_GREY_800, border_radius=5,
+               padding=ft.padding.only(10, 5, 20, 5))
 
-        gsheets_url_column.current.controls.append(item)
-        page.update()
+            gsheet_url.current.value = ""
+            gsheets_url_column.current.controls.append(item)
+            page.update()
 
     # Google Sheet Adder Card
     hint = "https://docs.google.com/spreadsheets/..."
