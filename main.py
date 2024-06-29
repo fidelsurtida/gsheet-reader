@@ -4,11 +4,10 @@ import modules.reader as reader
 
 def set_window_properties(page: ft.Page):
     page.title = "GSheet Reader"
-    page.window.width = 800
+    page.window.width = 900
     page.window.height = 600
     page.window.resizable = False
     page.window.always_on_top = True
-    # page.window.center()
     page.theme_mode = ft.ThemeMode.DARK
 
 
@@ -25,6 +24,22 @@ add_url_style = ft.ButtonStyle(
     bgcolor={
         ft.ControlState.HOVERED: ft.colors.GREEN_300,
         ft.ControlState.DEFAULT: ft.colors.GREEN_500,
+    }
+)
+
+update_url_style = ft.ButtonStyle(
+    color={
+        ft.ControlState.DEFAULT: ft.colors.GREY_400,
+        ft.ControlState.HOVERED: ft.colors.GREEN_500,
+        ft.ControlState.DISABLED: ft.colors.GREY_600
+    }
+)
+
+remove_url_style = ft.ButtonStyle(
+    color={
+        ft.ControlState.DEFAULT: ft.colors.GREY_400,
+        ft.ControlState.HOVERED: ft.colors.RED_400,
+        ft.ControlState.DISABLED: ft.colors.GREY_600
     }
 )
 
@@ -74,23 +89,41 @@ def main(page: ft.Page):
     def add_url_button_event(e):
         url = gsheet_url.current.value
         if url:
-            item = ft.Container(content=ft.Row([
+            item = (ft.Container(content=ft.Row([
+                ft.ProgressRing(height=20, width=20),
+                ft.Column([
+                    ft.Row([
+                        ft.Icon("insert_link_rounded", size=14),
+                        ft.Text(gsheet_url.current.value, width=460,
+                                no_wrap=True, tooltip=url,
+                                overflow=ft.TextOverflow.ELLIPSIS,
+                                color=ft.colors.WHITE60),
+                    ], spacing=3),
+                    ft.Row([
+                        ft.Icon("timer_outlined", size=12),
+                        ft.Text("LAST UPDATE: Fetching Details...",
+                                size=10, color=ft.colors.WHITE54,
+                                weight=ft.FontWeight.BOLD)
+                    ], spacing=5)
+                ], spacing=3),
                 ft.Row([
-                    ft.Icon("file_present_rounded"),
-                    ft.Text(gsheet_url.current.value)
-                ]),
-                ft.Row([
-                    ft.Container(ft.Text("Department Text"),
-                                 bgcolor=ft.colors.TEAL_500,
-                                 border_radius=8,
-                                 padding=ft.padding.symmetric(3, 10)),
+                    ft.Container(ft.Text("PENDING", max_lines=1, width=150,
+                                         text_align=ft.TextAlign.CENTER,
+                                         weight=ft.FontWeight.BOLD),
+                                 bgcolor=ft.colors.GREY_600,
+                                 border_radius=6,
+                                 padding=ft.padding.symmetric(3, 10),
+                                 margin=ft.margin.only(0, 0, 20, 0)),
+                    ft.IconButton(icon="download_for_offline_rounded",
+                                  style=update_url_style,
+                                  tooltip="DOWNLOAD DATA"),
                     ft.IconButton(icon="delete_forever",
-                                  icon_color=ft.colors.RED_300),
-                    ft.ProgressRing(height=20, width=20)
-                ])
+                                  style=remove_url_style,
+                                  tooltip="REMOVE URL")
+                ], spacing=1)
             ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN
-            ), bgcolor=ft.colors.BLUE_GREY_800, border_radius=5,
-               padding=ft.padding.only(10, 5, 20, 5))
+            ), bgcolor=ft.colors.BLUE_GREY_900, border_radius=5,
+               padding=ft.padding.only(18, 5, 15, 5)))
 
             gsheet_url.current.value = ""
             gsheets_url_column.current.controls.append(item)
@@ -105,7 +138,7 @@ def main(page: ft.Page):
                              label="Google Sheet URL:",
                              border_color=ft.colors.GREY_500,
                              hint_text=hint,
-                             expand=3),
+                             expand=4),
                 ft.FilledButton(ref=add_url_button,
                                 text="ADD URL",
                                 icon="add_link_sharp", height=50,
@@ -137,7 +170,7 @@ def main(page: ft.Page):
                          margin=ft.margin.only(5, 0, 5, 0),
                          border_radius=5)
         ]),
-        height=350, width=800
+        height=350
     )
 
     # Download Button and Progress Bar Container
