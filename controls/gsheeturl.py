@@ -20,6 +20,12 @@ class GSheetURL(ft.Container):
         """
         super().__init__()
 
+        # Declaration of flet control references
+        self._owner_name_text = ft.Ref[ft.Text]()
+        self._owner_container = ft.Ref[ft.Container]()
+        self._progress_ring = ft.Ref[ft.ProgressRing]()
+        self._completed_icon = ft.Ref[ft.Icon]()
+
         # Initialize first the container parameters
         self.bgcolor = ft.colors.BLUE_GREY_900
         self.border_radius = 5
@@ -27,7 +33,9 @@ class GSheetURL(ft.Container):
 
         # Initialize the custom control design UI
         self.content = ft.Row([
-            ft.ProgressRing(height=20, width=20),
+            ft.ProgressRing(ref=self._progress_ring, height=20, width=20),
+            ft.Icon("check_circle_rounded", ref=self._completed_icon,
+                    size=30, color=ft.colors.GREEN, visible=False),
             ft.Column([
                 ft.Row([
                     ft.Icon("insert_link_rounded", size=14),
@@ -44,21 +52,34 @@ class GSheetURL(ft.Container):
                 ], spacing=5)
             ], spacing=3),
             ft.Row([
-                ft.Container(ft.Text("PENDING", max_lines=1, width=150,
+                ft.Container(ft.Text("PENDING", ref=self._owner_name_text,
+                                     max_lines=2, width=150, size=13,
                                      text_align=ft.TextAlign.CENTER,
                                      weight=ft.FontWeight.BOLD),
+                             ref=self._owner_container,
                              bgcolor=ft.colors.GREY_600,
                              border_radius=6,
                              padding=ft.padding.symmetric(3, 10),
                              margin=ft.margin.only(0, 0, 20, 0)),
                 ft.IconButton(icon="download_for_offline_rounded",
                               style=update_url_style,
-                              tooltip="DOWNLOAD DATA"),
+                              tooltip="DOWNLOAD DATA", disabled=True),
                 ft.IconButton(icon="delete_forever",
                               style=remove_url_style,
-                              tooltip="REMOVE URL")
+                              tooltip="REMOVE URL", disabled=True)
             ], spacing=1)
         ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+
+    def update_display_labels(self, *, owner):
+        """
+        This method will be used to update the display fields of this
+        control. Department Owner, Timestamp and status icon.
+        """
+        self._owner_name_text.current.value = owner
+        self._owner_container.current.bgcolor = ft.colors.TEAL_700
+        self._progress_ring.current.visible = False
+        self._completed_icon.current.visible = True
+        self.update()
 
 
 # ----------------------

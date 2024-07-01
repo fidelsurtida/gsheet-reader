@@ -1,15 +1,63 @@
+# ---------------------------------------------------
+# reader.py - Reader Class
+# ---------------------------------------------------
+# A module that contains various methods to fetch
+# data from a specific GSheet URL. Methods also
+# accept references of controls for it to update the
+# UI after the request has completed.
+# The way this reader finds data from a spreadsheet
+# is determined by the configuration of data rows
+# and column placements in the settings menu of the
+# application.
+# ---------------------------------------------------
+
 import gspread
+import csv
 import flet as ft
 from pathlib import Path
-import csv
 
-BASE_PATH = Path(__file__).resolve().parent.parent
+
+class Reader:
+
+    # Configuration Path
+    BASE_PATH = Path(__file__).resolve().parent.parent
+    API_KEY = BASE_PATH / "config/apikey.json"
+
+    def __init__(self, *, url):
+        """
+        Reader is a module that contains various methods for retrieving
+        different kinds of data on a Google spreadsheet. This relies on
+        the data mapping of rows and columns configuration of the application
+        to get the data on a correct location in the sheet.
+        """
+        self.client = gspread.service_account(
+            filename=Reader.API_KEY,
+            scopes=gspread.auth.READONLY_SCOPES)
+        self.gsheet = self.client.open_by_url(url)
+
+    def fetch_data(self, *, sheet_identifier, completed):
+        """
+        Fetch all the required data based on the application configuration
+        and save it first on the dictionary variable.
+        """
+        # Get the worksheets with only names starting with identifier
+        sheets_names = []
+        for ws in self.gsheet.worksheets():
+            if ws.title.startswith(sheet_identifier):
+                sheets_names.append(ws.title)
+
+        # Get the department name on F2 cell (TODO in configuration)
+        first_sheet = self.gsheet.worksheet(sheets_names[0])
+        department_name = first_sheet.acell("F2").value
+
+        # Call the completed callback method after all fetching are done.
+        params = {"owner": department_name}
+        completed(params)
 
 
 # "https://docs.google.com/spreadsheets/d/1xDew94vfttSPIZ39nA7G7V9kGs_76BI6g-URrsKHP_A/"
 def generate_csv_report(url, button: ft.Ref, page: ft.Page):
-    apikey = BASE_PATH / "config/apikey.json"
-    gc = gspread.service_account(filename=apikey)
+    gc = gspread.service_account(filename=Reader.API_KEY)
 
     # open an existing spreadsheet using the gsheet url
     sh = gc.open_by_url(url)

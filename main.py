@@ -1,6 +1,7 @@
 import flet as ft
 from controls.gsheeturl import GSheetURL
-import modules.reader as reader
+from modules.reader import Reader
+import modules.reader as tempreader
 
 
 def set_window_properties(page: ft.Page):
@@ -66,18 +67,30 @@ def main(page: ft.Page):
             download_button.current.disabled = True
             progress_container.current.visible = True
             page.update()
-            # reader.generate_csv_report(url, download_button, page)
+            # tempreader.generate_csv_report(url, download_button, page)
         else:
             print("INVALID GSHEET URL...")
 
-    # Add URL Button Event
     def add_url_button_event(e):
+        """
+        This button event will add a GSheetURL control to the container
+        UI interface and perform a data fetch on the Google Sheet.
+        """
         url = gsheet_url.current.value
         if url:
-            item = GSheetURL(url)
+            # Create a GSheetURL control and append it to the gsheets cont
+            gsheeturl_item = GSheetURL(url)
             gsheet_url.current.value = ""
-            gsheets_url_column.current.controls.append(item)
+            gsheets_url_column.current.controls.append(gsheeturl_item)
             page.update()
+
+            # Create a Reader based from the passed url and specify a completed
+            # callback method to update certain UI controls
+            def fetch_completed(params):
+                gsheeturl_item.update_display_labels(owner=params["owner"])
+
+            reader = Reader(url=url)
+            reader.fetch_data(sheet_identifier="*-", completed=fetch_completed)
 
     # Google Sheet Adder Card
     hint = "https://docs.google.com/spreadsheets/..."
