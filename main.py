@@ -1,6 +1,7 @@
 import flet as ft
 from controls.gsheeturl import GSheetURL
 from modules.reader import Reader
+from modules.styles import Styles
 import modules.reader as tempreader
 
 
@@ -11,40 +12,6 @@ def set_window_properties(page: ft.Page):
     page.window.resizable = False
     page.window.always_on_top = True
     page.theme_mode = ft.ThemeMode.DARK
-
-
-# CONTROL STYLES
-add_url_style = ft.ButtonStyle(
-    shape=ft.RoundedRectangleBorder(radius=8),
-    overlay_color={
-        ft.ControlState.PRESSED: ft.colors.GREEN_900
-    },
-    color={
-        ft.ControlState.DEFAULT: ft.colors.GREEN_900,
-        ft.ControlState.HOVERED: ft.colors.GREEN_100,
-        ft.ControlState.DISABLED: ft.colors.GREY_900
-    },
-    bgcolor={
-        ft.ControlState.HOVERED: ft.colors.GREEN_300,
-        ft.ControlState.DEFAULT: ft.colors.GREEN_500,
-        ft.ControlState.DISABLED: ft.colors.GREY_800
-    }
-)
-
-download_data_style = ft.ButtonStyle(
-    shape=ft.RoundedRectangleBorder(radius=10),
-    overlay_color={
-        ft.ControlState.PRESSED: ft.colors.BLUE_800
-    },
-    color={
-        ft.ControlState.DEFAULT: ft.colors.BLUE_900,
-        ft.ControlState.HOVERED: ft.colors.BLUE_100,
-    },
-    bgcolor={
-        ft.ControlState.HOVERED: ft.colors.BLUE_400,
-        ft.ControlState.DEFAULT: ft.colors.BLUE_500,
-    }
-)
 
 
 # --------------------------------
@@ -110,7 +77,7 @@ def main(page: ft.Page):
                               text="ADD URL",
                               icon="add_link_sharp", height=50,
                               expand=1,
-                              style=add_url_style,
+                              style=Styles.add_url_style,
                               on_click=add_url_button_event)
         ], spacing=20), padding=20))
 
@@ -151,7 +118,7 @@ def main(page: ft.Page):
             icon="cloud_download_sharp",
             on_click=download_button_event,
             expand=2, height=50,
-            style=download_data_style)
+            style=Styles.download_data_style)
     ], spacing=30), height=70, padding=10)
 
     # Add the main elements of the application

@@ -9,6 +9,7 @@
 
 import flet as ft
 from datetime import datetime
+from modules.styles import Styles
 
 
 class GSheetURL(ft.Container):
@@ -68,11 +69,11 @@ class GSheetURL(ft.Container):
                              margin=ft.margin.only(0, 0, 20, 0)),
                 ft.IconButton(icon="download_for_offline_rounded",
                               ref=self._download_button,
-                              style=download_url_style,
+                              style=Styles.download_url_style,
                               tooltip="DOWNLOAD DATA", disabled=True),
                 ft.IconButton(icon="delete_forever",
                               ref=self._remove_button,
-                              style=remove_url_style,
+                              style=Styles.remove_url_style,
                               tooltip="REMOVE URL", disabled=True)
             ], spacing=1)
         ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
@@ -91,23 +92,3 @@ class GSheetURL(ft.Container):
         self._remove_button.current.disabled = False
         self._download_button.current.disabled = False
         self.update()
-
-
-# ----------------------
-#  CLASS BUTTON STYLES
-# ----------------------
-download_url_style = ft.ButtonStyle(
-    color={
-        ft.ControlState.DEFAULT: ft.colors.GREY_400,
-        ft.ControlState.HOVERED: ft.colors.GREEN_500,
-        ft.ControlState.DISABLED: ft.colors.GREY_700
-    }
-)
-
-remove_url_style = ft.ButtonStyle(
-    color={
-        ft.ControlState.DEFAULT: ft.colors.GREY_400,
-        ft.ControlState.HOVERED: ft.colors.RED_400,
-        ft.ControlState.DISABLED: ft.colors.GREY_700
-    }
-)
