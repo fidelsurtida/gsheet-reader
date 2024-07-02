@@ -8,6 +8,7 @@
 # ---------------------------------------------------
 
 import flet as ft
+from datetime import datetime
 
 
 class GSheetURL(ft.Container):
@@ -25,6 +26,9 @@ class GSheetURL(ft.Container):
         self._owner_container = ft.Ref[ft.Container]()
         self._progress_ring = ft.Ref[ft.ProgressRing]()
         self._completed_icon = ft.Ref[ft.Icon]()
+        self._last_update_text = ft.Ref[ft.Text]()
+        self._download_button = ft.Ref[ft.IconButton]()
+        self._remove_button = ft.Ref[ft.IconButton]()
 
         # Initialize first the container parameters
         self.bgcolor = ft.colors.BLUE_GREY_900
@@ -47,6 +51,7 @@ class GSheetURL(ft.Container):
                 ft.Row([
                     ft.Icon("timer_outlined", size=12),
                     ft.Text("LAST UPDATE: Fetching Details...",
+                            ref=self._last_update_text,
                             size=10, color=ft.colors.WHITE54,
                             weight=ft.FontWeight.BOLD)
                 ], spacing=5)
@@ -57,14 +62,16 @@ class GSheetURL(ft.Container):
                                      text_align=ft.TextAlign.CENTER,
                                      weight=ft.FontWeight.BOLD),
                              ref=self._owner_container,
-                             bgcolor=ft.colors.GREY_600,
+                             bgcolor=ft.colors.GREY_700,
                              border_radius=6,
                              padding=ft.padding.symmetric(3, 10),
                              margin=ft.margin.only(0, 0, 20, 0)),
                 ft.IconButton(icon="download_for_offline_rounded",
-                              style=update_url_style,
+                              ref=self._download_button,
+                              style=download_url_style,
                               tooltip="DOWNLOAD DATA", disabled=True),
                 ft.IconButton(icon="delete_forever",
+                              ref=self._remove_button,
                               style=remove_url_style,
                               tooltip="REMOVE URL", disabled=True)
             ], spacing=1)
@@ -75,21 +82,25 @@ class GSheetURL(ft.Container):
         This method will be used to update the display fields of this
         control. Department Owner, Timestamp and status icon.
         """
+        timestamp = datetime.now().strftime("%B %d, %Y - %-I:%M %p")
         self._owner_name_text.current.value = owner
         self._owner_container.current.bgcolor = ft.colors.TEAL_700
         self._progress_ring.current.visible = False
         self._completed_icon.current.visible = True
+        self._last_update_text.current.value = f"LAST UPDATE: {timestamp}"
+        self._remove_button.current.disabled = False
+        self._download_button.current.disabled = False
         self.update()
 
 
 # ----------------------
 #  CLASS BUTTON STYLES
 # ----------------------
-update_url_style = ft.ButtonStyle(
+download_url_style = ft.ButtonStyle(
     color={
         ft.ControlState.DEFAULT: ft.colors.GREY_400,
         ft.ControlState.HOVERED: ft.colors.GREEN_500,
-        ft.ControlState.DISABLED: ft.colors.GREY_600
+        ft.ControlState.DISABLED: ft.colors.GREY_700
     }
 )
 
@@ -97,6 +108,6 @@ remove_url_style = ft.ButtonStyle(
     color={
         ft.ControlState.DEFAULT: ft.colors.GREY_400,
         ft.ControlState.HOVERED: ft.colors.RED_400,
-        ft.ControlState.DISABLED: ft.colors.GREY_600
+        ft.ControlState.DISABLED: ft.colors.GREY_700
     }
 )

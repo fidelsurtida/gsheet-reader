@@ -22,10 +22,12 @@ add_url_style = ft.ButtonStyle(
     color={
         ft.ControlState.DEFAULT: ft.colors.GREEN_900,
         ft.ControlState.HOVERED: ft.colors.GREEN_100,
+        ft.ControlState.DISABLED: ft.colors.GREY_900
     },
     bgcolor={
         ft.ControlState.HOVERED: ft.colors.GREEN_300,
         ft.ControlState.DEFAULT: ft.colors.GREEN_500,
+        ft.ControlState.DISABLED: ft.colors.GREY_800
     }
 )
 
@@ -79,15 +81,18 @@ def main(page: ft.Page):
         url = gsheet_url.current.value
         if url:
             # Create a GSheetURL control and append it to the gsheets cont
-            gsheeturl_item = GSheetURL(url)
+            gsheeturl_control = GSheetURL(url)
             gsheet_url.current.value = ""
-            gsheets_url_column.current.controls.append(gsheeturl_item)
+            gsheets_url_column.current.controls.append(gsheeturl_control)
+            add_url_button.current.disabled = True
             page.update()
 
             # Create a Reader based from the passed url and specify a completed
             # callback method to update certain UI controls
-            def fetch_completed(params):
-                gsheeturl_item.update_display_labels(owner=params["owner"])
+            def fetch_completed(kwargs):
+                gsheeturl_control.update_display_labels(owner=kwargs["owner"])
+                add_url_button.current.disabled = False
+                add_url_button.current.update()
 
             reader = Reader(url=url)
             reader.fetch_data(sheet_identifier="*-", completed=fetch_completed)
@@ -101,12 +106,12 @@ def main(page: ft.Page):
                          border_color=ft.colors.GREY_500,
                          hint_text=hint,
                          expand=4),
-            ft.FilledButton(ref=add_url_button,
-                            text="ADD URL",
-                            icon="add_link_sharp", height=50,
-                            expand=1,
-                            style=add_url_style,
-                            on_click=add_url_button_event)
+            ft.ElevatedButton(ref=add_url_button,
+                              text="ADD URL",
+                              icon="add_link_sharp", height=50,
+                              expand=1,
+                              style=add_url_style,
+                              on_click=add_url_button_event)
         ], spacing=20), padding=20))
 
     # Google Sheets List Container

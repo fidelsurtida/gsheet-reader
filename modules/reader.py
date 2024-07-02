@@ -46,13 +46,13 @@ class Reader:
             if ws.title.startswith(sheet_identifier):
                 sheets_names.append(ws.title)
 
-        # Get the department name on F2 cell (TODO in configuration)
+        # Get the department name on F2 cell (Should be in configuration)
         first_sheet = self.gsheet.worksheet(sheets_names[0])
         department_name = first_sheet.acell("F2").value
 
         # Call the completed callback method after all fetching are done.
-        params = {"owner": department_name}
-        completed(params)
+        args = {"owner": department_name}
+        completed(args)
 
 
 # "https://docs.google.com/spreadsheets/d/1xDew94vfttSPIZ39nA7G7V9kGs_76BI6g-URrsKHP_A/"
