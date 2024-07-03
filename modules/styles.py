@@ -58,9 +58,11 @@ class Styles:
         color={
             ft.ControlState.DEFAULT: ft.colors.BLUE_900,
             ft.ControlState.HOVERED: ft.colors.BLUE_100,
+            ft.ControlState.DISABLED: ft.colors.GREY_900
         },
         bgcolor={
             ft.ControlState.HOVERED: ft.colors.BLUE_400,
             ft.ControlState.DEFAULT: ft.colors.BLUE_500,
+            ft.ControlState.DISABLED: ft.colors.GREY_800
         }
     )

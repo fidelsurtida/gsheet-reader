@@ -13,8 +13,9 @@
 
 import gspread
 import csv
-import flet as ft
+import time
 from pathlib import Path
+from gspread.utils import Dimension
 
 
 class Reader:
@@ -30,102 +31,104 @@ class Reader:
         the data mapping of rows and columns configuration of the application
         to get the data on a correct location in the sheet.
         """
+        self.url = url
         self.client = gspread.service_account(
             filename=Reader.API_KEY,
             scopes=gspread.auth.READONLY_SCOPES)
-        self.gsheet = self.client.open_by_url(url)
 
-    def fetch_data(self, *, sheet_identifier, completed):
+    def fetch_data(self, *, sheet_identifier, progress, completed):
         """
         Fetch all the required data based on the application configuration
         and save it first on the dictionary variable.
         """
+        # Get the gsheet from the url
+        progress("Opening Sheet from URL...", 0)
+        gsheet = self.client.open_by_url(self.url)
+
         # Get the worksheets with only names starting with identifier
         sheets_names = []
-        for ws in self.gsheet.worksheets():
+        progress("Filtering Worksheet Names...", 0.05)
+        for ws in gsheet.worksheets():
             if ws.title.startswith(sheet_identifier):
                 sheets_names.append(ws.title)
 
         # Get the department name on F2 cell (Should be in configuration)
-        first_sheet = self.gsheet.worksheet(sheets_names[0])
+        progress("Fetching Sheet Department...", 0.1)
+        first_sheet = gsheet.worksheet(sheets_names[0])
         department_name = first_sheet.acell("F2").value
 
+        # Iterate over the sheet names and get the data columns
+        # The configuration of columns should be on the app configuration
+        final_data = []
+        cur_prog = 0.1
+        per_job_prog = (0.8 / len(sheets_names))
+
+        for sheet_name in sheets_names:
+            sheet = gsheet.worksheet(sheet_name)
+            sheet_owner = sheet.acell("F1").value
+
+            # Get the column config based from the structure of Excel
+            # Column E - Date and Time
+            # Column F - Task Name
+            # Column H - Processed
+            # Column I - Start Time
+            # Column J - End Time
+            cur_prog = cur_prog + per_job_prog
+            progress(f"Downloading [{sheet_owner} Sheet Data]...", cur_prog)
+            data = sheet.get(range_name="E:J",
+                             major_dimension=Dimension.cols)
+            time.sleep(3)
+
+            # Select only the required columns and assign to each variable
+            # Also disregard the first 5 initial row of it's column
+            date_times = data[0][5:]
+            task_names = data[1][5:]
+            num_processed = data[3][5:]
+            start_times = data[4][5:]
+            end_times = data[5][5:]
+
+            # Format the times to datetime object
+            for i, stime in enumerate(start_times):
+                start_times[i] = self._sanitize_time(stime)
+            for i, etime in enumerate(end_times):
+                end_times[i] = self._sanitize_time(etime)
+
+            columns = [date_times, task_names, num_processed,
+                       start_times, end_times]
+
+            for index in range(5, len(date_times)):
+                result = [sheet_owner]
+                for column in columns:
+                    try:
+                        result.append(column[index])
+                    except IndexError:
+                        result.append("")
+                # Don't append the 3rd index which is the num_processed if empty
+                if result[3]:
+                    final_data.append(result)
+
         # Call the completed callback method after all fetching are done.
-        args = {"owner": department_name}
+        args = {"owner": department_name, "final_data": final_data}
+        progress(f"{department_name} - COMPLETED", 1)
         completed(args)
+
+    @staticmethod
+    def _sanitize_time(strtime):
+        """ Helper method to correct the format of datetime string. """
+        if len(strtime.split()) > 1:
+            timestr, ampm = strtime.split()
+            hour, minutes = timestr.split(":")[:2]
+            return f"{hour}:{minutes} {ampm}"
+        return ""
 
 
 # "https://docs.google.com/spreadsheets/d/1xDew94vfttSPIZ39nA7G7V9kGs_76BI6g-URrsKHP_A/"
-def generate_csv_report(url, button: ft.Ref, page: ft.Page):
-    gc = gspread.service_account(filename=Reader.API_KEY)
-
-    # open an existing spreadsheet using the gsheet url
-    sh = gc.open_by_url(url)
-
-    # Get the worksheets with only names starting ing "*-"
-    sheets_names = []
-    worksheets = sh.worksheets()
-    for ws in worksheets:
-        if ws.title.startswith("*-"):
-            sheets_names.append(ws.title)
-
-    def sanitize_time(strtime):
-        if len(strtime.split()) > 1:
-            time, ampm = strtime.split()
-            hour, minutes = time.split(":")[:2]
-            return f"{hour}:{minutes} {ampm}"
-        return ""
+def generate_csv_report(url):
 
     # Header and Final Data vars
     headers = ["Name", "Date and Time", "Task Done",
                "Processed", "START", "END"]
     final_data = []
-
-    # Iterate over the sheet names and get the config per employee
-    for sheet_name in sheets_names[:1]:
-        sheet = sh.worksheet(sheet_name)
-
-        # Get the column config based from the structure of excel
-        # Column D(4) - Name
-        # Column E(5) - Date and Time
-        # Column F(6) - Task Name
-        # Column H(8) - Processed
-        # Column I(9) - Start Time
-        # Column J(10) - End Time
-        print("getting names...")
-        names = sheet.col_values(4)
-        print("getting date-times...")
-        date_times = sheet.col_values(5)
-        print("getting task names...")
-        task_names = sheet.col_values(6)
-        print("getting num_processed...")
-        num_processed = sheet.col_values(8)
-        print("getting start_times...")
-        start_times = sheet.col_values(9)
-        print("getting end_times...")
-        end_times = sheet.col_values(10)
-
-        # Format the times to datetime object
-        for i, stime in enumerate(start_times):
-            start_times[i] = sanitize_time(stime)
-        for i, etime in enumerate(end_times):
-            end_times[i] = sanitize_time(etime)
-
-        columns = [names, date_times, task_names, num_processed,
-                   start_times, end_times]
-
-        for index in range(5, len(names)):
-            result = []
-            for column in columns:
-                try:
-                    result.append(column[index])
-                except IndexError:
-                    result.append("")
-            # Don't append the 3rd index which is the num_processed if empty
-            if result[3]:
-                final_data.append(result)
-
-        # pprint.pprint(final_data, width=300)
 
     # Create the csv file
     filename = "kpi_records.csv"
@@ -134,8 +137,4 @@ def generate_csv_report(url, button: ft.Ref, page: ft.Page):
         csvwriter = csv.writer(csvfile)
         csvwriter.writerow(headers)
         csvwriter.writerows(final_data)
-
-        # Activate again the passed button
-        button.current.disabled = False
-        page.update()
     

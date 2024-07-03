@@ -3,13 +3,15 @@ from controls.gsheeturl import GSheetURL
 from controls.progress import Progress
 from modules.reader import Reader
 from modules.styles import Styles
-import modules.reader as tempreader
 
+
+# GLOBAL DATA VARIABLE for creating CSV
+DATA = {}
 
 # Flet Control References
 gsheet_url = ft.Ref[ft.TextField]()
-download_button = ft.Ref[ft.CupertinoButton]()
-add_url_button = ft.Ref[ft.FilledButton]()
+download_button = ft.Ref[ft.ElevatedButton]()
+add_url_button = ft.Ref[ft.ElevatedButton]()
 progress_container = ft.Ref[ft.Column]()
 gsheets_url_column = ft.Ref[ft.Column]()
 
@@ -30,17 +32,28 @@ def add_url_button_event(e):
         gsheet_url.current.value = ""
         gsheets_url_column.current.controls.append(gsheeturl_control)
         add_url_button.current.disabled = True
+        download_button.current.disabled = True
+        progressbar_control.reset()
         e.page.update()
 
-        # Create a Reader based from the passed url and specify a completed
-        # callback method to update certain UI controls
         def fetch_completed(kwargs):
+            """ Callback method after the data fetch has been completed. """
+            DATA[kwargs["owner"]] = kwargs["final_data"]
             gsheeturl_control.update_display_labels(owner=kwargs["owner"])
             add_url_button.current.disabled = False
-            add_url_button.current.update()
+            download_button.current.disabled = False
+            e.page.update()
+            print(DATA)
 
+        def progress_callback(message, value):
+            """ Callback for the progress bar control to update. """
+            progressbar_control.update_progress(message=message, value=value)
+
+        # Create a Reader class to fetch data and pass the required callbacks
         reader = Reader(url=url)
-        reader.fetch_data(sheet_identifier="*-", completed=fetch_completed)
+        reader.fetch_data(sheet_identifier="*-",
+                          progress=progress_callback,
+                          completed=fetch_completed)
 
 
 def download_button_event(e):
@@ -51,9 +64,7 @@ def download_button_event(e):
     url = gsheet_url.current.value
     if url:
         download_button.current.disabled = True
-        progress_container.current.visible = True
         e.page.update()
-        # tempreader.generate_csv_report(url, download_button, page)
     else:
         print("INVALID GSHEET URL...")
 
@@ -113,9 +124,9 @@ def main(page: ft.Page):
     download_progress_container = ft.Container(
         content=ft.Row([
             progressbar_control,
-            ft.FilledButton(
+            ft.ElevatedButton(
                 ref=download_button,
-                text="DOWNLOAD DATA",
+                text="DOWNLOAD CSV",
                 icon="cloud_download_sharp",
                 on_click=download_button_event,
                 expand=2, height=50,

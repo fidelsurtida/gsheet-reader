@@ -36,3 +36,19 @@ class Progress(ft.Column):
                            color=ft.colors.GREEN_400,
                            value=0)
         ]
+
+    def update_progress(self, *, message, value):
+        """ Updates the message and progress value of this control. """
+        if message:
+            self._message_text.current.value = message
+        self._progress_bar.current.value = value
+        if value == 1:
+            self._message_text.current.color = ft.colors.GREEN_400
+        self.update()
+
+    def reset(self):
+        """ Resets the progress bar to show no message and 0 value. """
+        self._message_text.current.value = ""
+        self._message_text.current.color = ft.colors.WHITE
+        self._progress_bar.current.value = 0
+        self.update()
