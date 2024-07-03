@@ -15,9 +15,10 @@ import gspread
 import csv
 import time
 from pathlib import Path
-from gspread.utils import Dimension
+from gspread.utils import Dimension, DateTimeOption
 
 
+# "https://docs.google.com/spreadsheets/d/1xDew94vfttSPIZ39nA7G7V9kGs_76BI6g-URrsKHP_A/"
 class Reader:
 
     # Configuration Path
@@ -97,7 +98,7 @@ class Reader:
                        start_times, end_times]
 
             for index in range(5, len(date_times)):
-                result = [sheet_owner]
+                result = [department_name, sheet_owner]
                 for column in columns:
                     try:
                         result.append(column[index])
@@ -121,20 +122,21 @@ class Reader:
             return f"{hour}:{minutes} {ampm}"
         return ""
 
+    @staticmethod
+    def generate_csv_report(data):
+        """
+        Standalone method to generate a csv report based
+        on the passed DATA library.
+        """
+        # Header column names for the CSV
+        headers = ["Department", "Name", "Date and Time", "Task Done",
+                   "Processed", "START", "END"]
 
-# "https://docs.google.com/spreadsheets/d/1xDew94vfttSPIZ39nA7G7V9kGs_76BI6g-URrsKHP_A/"
-def generate_csv_report(url):
-
-    # Header and Final Data vars
-    headers = ["Name", "Date and Time", "Task Done",
-               "Processed", "START", "END"]
-    final_data = []
-
-    # Create the csv file
-    filename = "kpi_records.csv"
-    with open(filename, 'w') as csvfile:
-        print("generating csv file...")
-        csvwriter = csv.writer(csvfile)
-        csvwriter.writerow(headers)
-        csvwriter.writerows(final_data)
+        # Create the csv file
+        filename = "kpi_records.csv"
+        with open(filename, 'w') as csvfile:
+            csvwriter = csv.writer(csvfile)
+            csvwriter.writerow(headers)
+            for rows in data.values():
+                csvwriter.writerows(rows)
     

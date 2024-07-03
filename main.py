@@ -43,7 +43,6 @@ def add_url_button_event(e):
             add_url_button.current.disabled = False
             download_button.current.disabled = False
             e.page.update()
-            print(DATA)
 
         def progress_callback(message, value):
             """ Callback for the progress bar control to update. """
@@ -61,12 +60,12 @@ def download_button_event(e):
     This button event will create a csv report based
     on the saved url data json files.
     """
-    url = gsheet_url.current.value
-    if url:
+    if DATA:
         download_button.current.disabled = True
-        e.page.update()
-    else:
-        print("INVALID GSHEET URL...")
+        download_button.current.update()
+        Reader.generate_csv_report(DATA)
+        download_button.current.disabled = False
+        download_button.current.update()
 
 
 # --------------------------------
