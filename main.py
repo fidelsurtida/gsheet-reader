@@ -1,68 +1,75 @@
 import flet as ft
 from controls.gsheeturl import GSheetURL
+from controls.progress import Progress
 from modules.reader import Reader
 from modules.styles import Styles
 import modules.reader as tempreader
 
 
-def set_window_properties(page: ft.Page):
-    page.title = "GSheet Reader"
-    page.window.width = 900
-    page.window.height = 600
-    page.window.resizable = False
-    page.window.always_on_top = True
-    page.theme_mode = ft.ThemeMode.DARK
+# Flet Control References
+gsheet_url = ft.Ref[ft.TextField]()
+download_button = ft.Ref[ft.CupertinoButton]()
+add_url_button = ft.Ref[ft.FilledButton]()
+progress_container = ft.Ref[ft.Column]()
+gsheets_url_column = ft.Ref[ft.Column]()
+
+# Custom Control References
+progressbar_control = Progress()
+
+
+def add_url_button_event(e):
+    """
+    This button event will add a GSheetURL control to
+    the container UI interface and perform a data
+    fetch on the Google Sheet.
+    """
+    url = gsheet_url.current.value
+    if url:
+        # Create a GSheetURL control and append it to the gsheets cont
+        gsheeturl_control = GSheetURL(url)
+        gsheet_url.current.value = ""
+        gsheets_url_column.current.controls.append(gsheeturl_control)
+        add_url_button.current.disabled = True
+        e.page.update()
+
+        # Create a Reader based from the passed url and specify a completed
+        # callback method to update certain UI controls
+        def fetch_completed(kwargs):
+            gsheeturl_control.update_display_labels(owner=kwargs["owner"])
+            add_url_button.current.disabled = False
+            add_url_button.current.update()
+
+        reader = Reader(url=url)
+        reader.fetch_data(sheet_identifier="*-", completed=fetch_completed)
+
+
+def download_button_event(e):
+    """
+    This button event will create a csv report based
+    on the saved url data json files.
+    """
+    url = gsheet_url.current.value
+    if url:
+        download_button.current.disabled = True
+        progress_container.current.visible = True
+        e.page.update()
+        # tempreader.generate_csv_report(url, download_button, page)
+    else:
+        print("INVALID GSHEET URL...")
 
 
 # --------------------------------
 # FLET MAIN FUNCTION ENTRY POINT
 # --------------------------------
 def main(page: ft.Page):
+
     # Set the Window Properties
-    set_window_properties(page)
-
-    # Flet Control References
-    gsheet_url = ft.Ref[ft.TextField]()
-    download_button = ft.Ref[ft.CupertinoButton]()
-    add_url_button = ft.Ref[ft.FilledButton]()
-    progress_container = ft.Ref[ft.Column]()
-    progress_bar = ft.Ref[ft.ProgressBar]()
-    gsheets_url_column = ft.Ref[ft.Column]()
-
-    # On-Click Button event of generate CSV button
-    def download_button_event(e):
-        url = gsheet_url.current.value
-        if url:
-            download_button.current.disabled = True
-            progress_container.current.visible = True
-            page.update()
-            # tempreader.generate_csv_report(url, download_button, page)
-        else:
-            print("INVALID GSHEET URL...")
-
-    def add_url_button_event(e):
-        """
-        This button event will add a GSheetURL control to the container
-        UI interface and perform a data fetch on the Google Sheet.
-        """
-        url = gsheet_url.current.value
-        if url:
-            # Create a GSheetURL control and append it to the gsheets cont
-            gsheeturl_control = GSheetURL(url)
-            gsheet_url.current.value = ""
-            gsheets_url_column.current.controls.append(gsheeturl_control)
-            add_url_button.current.disabled = True
-            page.update()
-
-            # Create a Reader based from the passed url and specify a completed
-            # callback method to update certain UI controls
-            def fetch_completed(kwargs):
-                gsheeturl_control.update_display_labels(owner=kwargs["owner"])
-                add_url_button.current.disabled = False
-                add_url_button.current.update()
-
-            reader = Reader(url=url)
-            reader.fetch_data(sheet_identifier="*-", completed=fetch_completed)
+    page.title = "GSheet Reader"
+    page.window.width = 900
+    page.window.height = 600
+    page.window.resizable = False
+    page.window.always_on_top = True
+    page.theme_mode = ft.ThemeMode.DARK
 
     # Google Sheet Adder Card
     hint = "https://docs.google.com/spreadsheets/..."
@@ -103,23 +110,18 @@ def main(page: ft.Page):
     ]), height=350)
 
     # Download Button and Progress Bar Container
-    download_progress_container = ft.Container(content=ft.Row([
-        ft.Column([
-            ft.Text("Downloading Sheets..."),
-            ft.ProgressBar(ref=progress_bar, bar_height=8,
-                           border_radius=ft.border_radius.all(5),
-                           color=ft.colors.GREEN_400,
-                           value=0.6)
-        ], ref=progress_container, expand=5),
-
-        ft.FilledButton(
-            ref=download_button,
-            text="DOWNLOAD DATA",
-            icon="cloud_download_sharp",
-            on_click=download_button_event,
-            expand=2, height=50,
-            style=Styles.download_data_style)
-    ], spacing=30), height=70, padding=10)
+    download_progress_container = ft.Container(
+        content=ft.Row([
+            progressbar_control,
+            ft.FilledButton(
+                ref=download_button,
+                text="DOWNLOAD DATA",
+                icon="cloud_download_sharp",
+                on_click=download_button_event,
+                expand=2, height=50,
+                style=Styles.download_data_style)
+            ], spacing=30
+        ), height=70, padding=10)
 
     # Add the main elements of the application
     page.add(sheet_url_card)
