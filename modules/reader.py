@@ -14,8 +14,9 @@
 import gspread
 import csv
 import time
+from datetime import datetime, timedelta
 from pathlib import Path
-from gspread.utils import Dimension, DateTimeOption
+from gspread.utils import Dimension, DateTimeOption, ValueRenderOption
 
 
 # "https://docs.google.com/spreadsheets/d/1xDew94vfttSPIZ39nA7G7V9kGs_76BI6g-URrsKHP_A/"
@@ -76,19 +77,28 @@ class Reader:
             # Column J - End Time
             cur_prog = cur_prog + per_job_prog
             progress(f"Downloading [{sheet_owner} Sheet Data]...", cur_prog)
-            data = sheet.get(range_name="E:J",
+            datedata = sheet.get(
+                range_name="E:E",  major_dimension=Dimension.cols,
+                date_time_render_option=DateTimeOption.serial_number,
+                value_render_option=ValueRenderOption.unformatted)
+            time.sleep(1)
+            data = sheet.get(range_name="F:J",
                              major_dimension=Dimension.cols)
             time.sleep(3)
 
             # Select only the required columns and assign to each variable
             # Also disregard the first 5 initial row of it's column
-            date_times = data[0][5:]
-            task_names = data[1][5:]
-            num_processed = data[3][5:]
-            start_times = data[4][5:]
-            end_times = data[5][5:]
+            date_times = datedata[0][5:]
+            task_names = data[0][5:]
+            num_processed = data[2][5:]
+            start_times = data[3][5:]
+            end_times = data[4][5:]
 
             # Format the times to datetime object
+            for i, strdate in enumerate(date_times):
+                if strdate:
+                    date = datetime(1899, 12, 30) + timedelta(days=int(strdate))
+                    date_times[i] = str(date.date())
             for i, stime in enumerate(start_times):
                 start_times[i] = self._sanitize_time(stime)
             for i, etime in enumerate(end_times):
@@ -104,8 +114,8 @@ class Reader:
                         result.append(column[index])
                     except IndexError:
                         result.append("")
-                # Don't append the 3rd index which is the num_processed if empty
-                if result[3]:
+                # Don't append the 4th index which is the num_processed if empty
+                if result[4]:
                     final_data.append(result)
 
         # Call the completed callback method after all fetching are done.
