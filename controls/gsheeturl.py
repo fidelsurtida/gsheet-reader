@@ -83,7 +83,7 @@ class GSheetURL(ft.Container):
         This method will be used to update the display fields of this
         control. Department Owner, Timestamp and status icon.
         """
-        timestamp = datetime.now().strftime("%B %d, %Y - %-I:%M %p")
+        timestamp = datetime.now().strftime("%B %d, %Y - %I:%M %p")
         self._owner_name_text.current.value = owner
         self._owner_container.current.bgcolor = ft.colors.TEAL_700
         self._progress_ring.current.visible = False
