@@ -59,6 +59,7 @@ class Reader:
         progress("Fetching Sheet Ownership...", 0.1)
         sheet_source = gsheet.worksheet("Instructions")
         department_name = sheet_source.acell("H2").value
+        month_sheet = ""
 
         # Iterate over the sheet names and get the data columns
         # The configuration of columns should be on the app configuration
@@ -104,6 +105,7 @@ class Reader:
                 if strdate:
                     date = datetime(1899, 12, 30) + timedelta(days=int(strdate))
                     date_times[i] = str(date.date())
+                    month_sheet = date.strftime("%B %Y")
             for i, stime in enumerate(start_times):
                 start_times[i] = self._sanitize_time(stime)
             for i, etime in enumerate(end_times):
@@ -124,7 +126,8 @@ class Reader:
                     final_data.append(result)
 
         # Call the completed callback method after all fetching are done.
-        args = {"owner": department_name, "final_data": final_data}
+        args = {"owner": department_name, "month": month_sheet,
+                "final_data": final_data}
         progress(f"{department_name} - COMPLETED", 1)
         completed(args)
 

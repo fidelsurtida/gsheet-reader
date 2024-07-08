@@ -39,7 +39,8 @@ def add_url_button_event(e):
         def fetch_completed(kwargs):
             """ Callback method after the data fetch has been completed. """
             DATA[kwargs["owner"]] = kwargs["final_data"]
-            gsheeturl_control.update_display_labels(owner=kwargs["owner"])
+            gsheeturl_control.update_display_labels(owner=kwargs["owner"],
+                                                    month=kwargs["month"])
             add_url_button.current.disabled = False
             download_button.current.disabled = False
             e.page.update()
@@ -60,7 +61,6 @@ def download_button_event(e):
     This button event will create a csv report based
     on the saved url data json files.
     """
-    Reader.generate_csv_report(DATA)
     if DATA:
         download_button.current.disabled = True
         download_button.current.update()
