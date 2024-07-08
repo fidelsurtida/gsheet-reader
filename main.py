@@ -60,6 +60,7 @@ def download_button_event(e):
     This button event will create a csv report based
     on the saved url data json files.
     """
+    Reader.generate_csv_report(DATA)
     if DATA:
         download_button.current.disabled = True
         download_button.current.update()
@@ -78,7 +79,6 @@ def main(page: ft.Page):
     page.window.width = 900
     page.window.height = 600
     page.window.resizable = False
-    page.window.always_on_top = True
     page.theme_mode = ft.ThemeMode.DARK
 
     # Google Sheet Adder Card

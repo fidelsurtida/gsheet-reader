@@ -14,6 +14,7 @@
 import gspread
 import csv
 import time
+import subprocess, os, platform
 from datetime import datetime, timedelta
 from pathlib import Path
 from gspread.utils import Dimension, DateTimeOption, ValueRenderOption
@@ -138,15 +139,26 @@ class Reader:
         Standalone method to generate a csv report based
         on the passed DATA library.
         """
+        # Create first the downloads folder
+        path = Reader.BASE_PATH / "downloads"
+        path.mkdir(exist_ok=True)
+
         # Header column names for the CSV
         headers = ["Department", "Name", "Date and Time", "Task Done",
                    "Processed", "START", "END"]
 
         # Create the csv file
-        filename = "kpi_records.csv"
-        with open(filename, 'w') as csvfile:
+        filepath = path / "dataexport.csv"
+        with open(filepath, 'w') as csvfile:
             csvwriter = csv.writer(csvfile)
             csvwriter.writerow(headers)
             for rows in data.values():
                 csvwriter.writerows(rows)
+
+        # Determine first the OS then call the correct
+        # command to open the downloads folder
+        if platform.system() == 'Darwin':  # macOS
+            subprocess.call(('open', path))
+        elif platform.system() == 'Windows':  # Windows
+            os.startfile(path)
     
