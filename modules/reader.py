@@ -56,9 +56,9 @@ class Reader:
                 sheets_names.append(ws.title)
 
         # Get the department name on F2 cell (Should be in configuration)
-        progress("Fetching Sheet Department...", 0.1)
-        first_sheet = gsheet.worksheet(sheets_names[0])
-        department_name = first_sheet.acell("F2").value
+        progress("Fetching Sheet Ownership...", 0.1)
+        sheet_source = gsheet.worksheet("Instructions")
+        department_name = sheet_source.acell("H2").value
 
         # Iterate over the sheet names and get the data columns
         # The configuration of columns should be on the app configuration
@@ -67,8 +67,12 @@ class Reader:
         per_job_prog = (0.8 / len(sheets_names))
 
         for sheet_name in sheets_names:
+            # Get the sheet and the ownership names
             sheet = gsheet.worksheet(sheet_name)
-            sheet_owner = sheet.acell("F1").value
+            ownerships = sheet.get(range_name="F1:F2",
+                                   major_dimension=Dimension.cols)
+            sheet_owner, account_name = ownerships[0]
+            time.sleep(1)
 
             # Get the column config based from the structure of Excel
             # Column E - Date and Time
@@ -85,7 +89,7 @@ class Reader:
             time.sleep(1)
             data = sheet.get(range_name="F:J",
                              major_dimension=Dimension.cols)
-            time.sleep(3)
+            time.sleep(2)
 
             # Select only the required columns and assign to each variable
             # Also disregard the first 5 initial row of it's column
@@ -109,14 +113,14 @@ class Reader:
                        start_times, end_times]
 
             for index in range(5, len(date_times)):
-                result = [department_name, sheet_owner]
+                result = [department_name, account_name, sheet_owner]
                 for column in columns:
                     try:
                         result.append(column[index])
                     except IndexError:
                         result.append("")
-                # Don't append the 4th index which is the num_processed if empty
-                if result[4]:
+                # Don't append the 5th index which is the num_processed if empty
+                if result[5]:
                     final_data.append(result)
 
         # Call the completed callback method after all fetching are done.
@@ -144,8 +148,8 @@ class Reader:
         path.mkdir(exist_ok=True)
 
         # Header column names for the CSV
-        headers = ["Department", "Name", "Date and Time", "Task Done",
-                   "Processed", "START", "END"]
+        headers = ["Department", "Account", "Name", "Date",
+                   "Task Done", "Processed", "START", "END"]
 
         # Create the csv file
         filepath = path / "dataexport.csv"
