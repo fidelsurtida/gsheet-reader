@@ -36,7 +36,7 @@ def add_url_button_event(e):
         progressbar_control.reset()
         e.page.update()
 
-        def fetch_completed(kwargs):
+        def fetch_completed(**kwargs):
             """ Callback method after the data fetch has been completed. """
             DATA[kwargs["owner"]] = kwargs["final_data"]
             gsheeturl_control.update_display_labels(owner=kwargs["owner"],
@@ -45,9 +45,9 @@ def add_url_button_event(e):
             download_button.current.disabled = False
             e.page.update()
 
-        def progress_callback(message, value):
+        def progress_callback(**kwargs):
             """ Callback for the progress bar control to update. """
-            progressbar_control.update_progress(message=message, value=value)
+            progressbar_control.update_progress(**kwargs)
 
         # Create a Reader class to fetch data and pass the required callbacks
         reader = Reader(url=url)
@@ -125,8 +125,8 @@ def main(page: ft.Page):
             progressbar_control,
             ft.ElevatedButton(
                 ref=download_button,
-                text="DOWNLOAD CSV",
-                icon="cloud_download_sharp",
+                text="GENERATE CSV",
+                icon="save_rounded",
                 on_click=download_button_event,
                 expand=2, height=50,
                 style=Styles.download_data_style)

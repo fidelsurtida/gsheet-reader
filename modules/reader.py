@@ -45,18 +45,18 @@ class Reader:
         and save it first on the dictionary variable.
         """
         # Get the gsheet from the url
-        progress("Opening Sheet from URL...", 0)
+        progress(left="Opening Sheet from URL...", value=0)
         gsheet = self.client.open_by_url(self.url)
 
         # Get the worksheets with only names starting with identifier
         sheets_names = []
-        progress("Filtering Worksheet Names...", 0.05)
+        progress(left="Filtering Worksheet Names...", value=0.05)
         for ws in gsheet.worksheets():
             if ws.title.startswith(sheet_identifier):
                 sheets_names.append(ws.title)
 
         # Get the department name on F2 cell (Should be in configuration)
-        progress("Fetching Sheet Ownership...", 0.1)
+        progress(left="Fetching Sheet Ownership...", value=0.1)
         sheet_source = gsheet.worksheet("Instructions")
         department_name = sheet_source.acell("H2").value
         month_sheet = ""
@@ -82,7 +82,8 @@ class Reader:
             # Column I - Start Time
             # Column J - End Time
             cur_prog = cur_prog + per_job_prog
-            progress(f"Downloading [{sheet_owner} Sheet Data]...", cur_prog)
+            progress(left="Downloading", center=sheet_owner,
+                     right="Sheet Data...", value=cur_prog)
             datedata = sheet.get(
                 range_name="E:E",  major_dimension=Dimension.cols,
                 date_time_render_option=DateTimeOption.serial_number,
@@ -126,10 +127,10 @@ class Reader:
                     final_data.append(result)
 
         # Call the completed callback method after all fetching are done.
-        args = {"owner": department_name, "month": month_sheet,
-                "final_data": final_data}
-        progress(f"{department_name} - COMPLETED", 1)
-        completed(args)
+        kwargs = {"owner": department_name, "month": month_sheet,
+                  "final_data": final_data}
+        progress(center=department_name, right="Download Completed", value=1)
+        completed(**kwargs)
 
     @staticmethod
     def _sanitize_time(strtime):
