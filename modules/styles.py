@@ -50,6 +50,14 @@ class Styles:
             ft.ControlState.DISABLED: ft.colors.GREY_800
         }
     )
+    settings_style = ft.ButtonStyle(
+        shape=ft.RoundedRectangleBorder(radius=8),
+        padding=ft.padding.symmetric(5, 8),
+        bgcolor={
+            ft.ControlState.HOVERED: ft.colors.BLUE_GREY_900,
+            ft.ControlState.DEFAULT: ft.colors.BLACK12
+        }
+    )
     download_data_style = ft.ButtonStyle(
         shape=ft.RoundedRectangleBorder(radius=10),
         overlay_color={

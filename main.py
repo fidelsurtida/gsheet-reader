@@ -95,8 +95,13 @@ def main(page: ft.Page):
                               icon="add_link_sharp", height=50,
                               expand=1,
                               style=Styles.add_url_style,
-                              on_click=add_url_button_event)
-        ], spacing=20), padding=20))
+                              on_click=add_url_button_event),
+            ft.OutlinedButton(content=ft.Icon("settings_rounded",
+                              size=30, color=ft.colors.WHITE60),
+                              width=55, height=50,
+                              style=Styles.settings_style,
+                              tooltip="DATA SETTINGS ")
+        ], spacing=15), padding=20))
 
     # Google Sheets List Container
     sheet_list_container = ft.Card(content=ft.Column([
