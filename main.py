@@ -1,5 +1,4 @@
 import flet as ft
-import os
 from controls.gsheeturl import GSheetURL
 from controls.progress import Progress
 from modules.reader import Reader
@@ -38,10 +37,11 @@ def add_url_button_event(e):
         progressbar_control.reset()
         e.page.update()
 
-        def fetch_completed(kwargs):
+        def fetch_completed(**kwargs):
             """ Callback method after the data fetch has been completed. """
             DATA[kwargs["owner"]] = kwargs["final_data"]
-            gsheeturl_control.update_display_labels(owner=kwargs["owner"])
+            gsheeturl_control.update_display_labels(owner=kwargs["owner"],
+                                                    month=kwargs["month"])
             add_url_button.current.disabled = False
             download_button.current.disabled = False
             e.page.update()
@@ -52,9 +52,9 @@ def add_url_button_event(e):
             file = data_dir / "temp.json"
             file.touch()
 
-        def progress_callback(message, value):
+        def progress_callback(**kwargs):
             """ Callback for the progress bar control to update. """
-            progressbar_control.update_progress(message=message, value=value)
+            progressbar_control.update_progress(**kwargs)
 
         # Create a Reader class to fetch data and pass the required callbacks
         reader = Reader(url=url)
@@ -86,7 +86,6 @@ def main(page: ft.Page):
     page.window.width = 900
     page.window.height = 600
     page.window.resizable = False
-    page.window.always_on_top = True
     page.theme_mode = ft.ThemeMode.DARK
 
     # Google Sheet Adder Card
@@ -103,8 +102,13 @@ def main(page: ft.Page):
                               icon="add_link_sharp", height=50,
                               expand=1,
                               style=Styles.add_url_style,
-                              on_click=add_url_button_event)
-        ], spacing=20), padding=20))
+                              on_click=add_url_button_event),
+            ft.OutlinedButton(content=ft.Icon("settings_rounded",
+                              size=30, color=ft.colors.WHITE60),
+                              width=55, height=50,
+                              style=Styles.settings_style,
+                              tooltip="DATA SETTINGS ")
+        ], spacing=15), padding=20))
 
     # Google Sheets List Container
     sheet_list_container = ft.Card(content=ft.Column([
@@ -133,8 +137,8 @@ def main(page: ft.Page):
             progressbar_control,
             ft.ElevatedButton(
                 ref=download_button,
-                text="DOWNLOAD CSV",
-                icon="cloud_download_sharp",
+                text="GENERATE CSV",
+                icon="save_rounded",
                 on_click=download_button_event,
                 expand=2, height=50,
                 style=Styles.download_data_style)

@@ -25,9 +25,12 @@ class GSheetURL(ft.Container):
         # Declaration of flet control references
         self._owner_name_text = ft.Ref[ft.Text]()
         self._owner_container = ft.Ref[ft.Container]()
+        self._month_container = ft.Ref[ft.Container]()
+        self._timestamp_container = ft.Ref[ft.Container]()
         self._progress_ring = ft.Ref[ft.ProgressRing]()
         self._completed_icon = ft.Ref[ft.Icon]()
-        self._last_update_text = ft.Ref[ft.Text]()
+        self._timestamp_text = ft.Ref[ft.Text]()
+        self._month_text = ft.Ref[ft.Text]()
         self._download_button = ft.Ref[ft.IconButton]()
         self._remove_button = ft.Ref[ft.IconButton]()
 
@@ -50,12 +53,30 @@ class GSheetURL(ft.Container):
                             color=ft.colors.WHITE60),
                 ], spacing=3),
                 ft.Row([
-                    ft.Icon("timer_outlined", size=12),
-                    ft.Text("LAST UPDATE: Fetching Details...",
-                            ref=self._last_update_text,
-                            size=10, color=ft.colors.WHITE54,
-                            weight=ft.FontWeight.BOLD)
-                ], spacing=5)
+                    ft.Container(content=ft.Row([
+                        ft.Icon("calendar_month_rounded", size=12,
+                                color=ft.colors.WHITE),
+                        ft.Text("MONTH: Fetching Details...",
+                                ref=self._month_text,
+                                color=ft.colors.WHITE, size=11,
+                                weight=ft.FontWeight.BOLD)
+                        ], spacing=5),
+                        ref=self._month_container,
+                        bgcolor=ft.colors.GREY_600,
+                        padding=ft.padding.symmetric(3, 5), border_radius=5),
+
+                    ft.Container(content=ft.Row([
+                        ft.Icon("timer_outlined", size=12,
+                                color=ft.colors.WHITE),
+                        ft.Text("TIMESTAMP: Fetching Details...",
+                                ref=self._timestamp_text,
+                                size=11, color=ft.colors.WHITE,
+                                weight=ft.FontWeight.BOLD)
+                        ], spacing=5),
+                        ref=self._timestamp_container,
+                        bgcolor=ft.colors.GREY_600,
+                        padding=ft.padding.symmetric(3, 5), border_radius=5)
+                ], spacing=8)
             ], spacing=3),
             ft.Row([
                 ft.Container(ft.Text("PENDING", ref=self._owner_name_text,
@@ -78,17 +99,20 @@ class GSheetURL(ft.Container):
             ], spacing=1)
         ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
 
-    def update_display_labels(self, *, owner):
+    def update_display_labels(self, *, owner, month):
         """
         This method will be used to update the display fields of this
         control. Department Owner, Timestamp and status icon.
         """
         timestamp = datetime.now().strftime("%B %d, %Y - %I:%M %p")
         self._owner_name_text.current.value = owner
-        self._owner_container.current.bgcolor = ft.colors.TEAL_700
+        self._owner_container.current.bgcolor = ft.colors.TEAL_800
+        self._month_container.current.bgcolor = ft.colors.TEAL_600
+        self._timestamp_container.current.bgcolor = ft.colors.TEAL_600
         self._progress_ring.current.visible = False
         self._completed_icon.current.visible = True
-        self._last_update_text.current.value = f"LAST UPDATE: {timestamp}"
+        self._timestamp_text.current.value = f"TIMESTAMP: {timestamp}"
+        self._month_text.current.value = month
         self._remove_button.current.disabled = False
         self._download_button.current.disabled = False
         self.update()

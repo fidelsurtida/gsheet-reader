@@ -14,6 +14,7 @@
 import gspread
 import csv
 import time
+import subprocess, os, platform
 from datetime import datetime, timedelta
 from pathlib import Path
 from gspread.utils import Dimension, DateTimeOption, ValueRenderOption
@@ -44,20 +45,21 @@ class Reader:
         and save it first on the dictionary variable.
         """
         # Get the gsheet from the url
-        progress("Opening Sheet from URL...", 0)
+        progress(left="Opening Sheet from URL...", value=0)
         gsheet = self.client.open_by_url(self.url)
 
         # Get the worksheets with only names starting with identifier
         sheets_names = []
-        progress("Filtering Worksheet Names...", 0.05)
+        progress(left="Filtering Worksheet Names...", value=0.05)
         for ws in gsheet.worksheets():
             if ws.title.startswith(sheet_identifier):
                 sheets_names.append(ws.title)
 
         # Get the department name on F2 cell (Should be in configuration)
-        progress("Fetching Sheet Department...", 0.1)
-        first_sheet = gsheet.worksheet(sheets_names[0])
-        department_name = first_sheet.acell("F2").value
+        progress(left="Fetching Sheet Ownership...", value=0.1)
+        sheet_source = gsheet.worksheet("Instructions")
+        department_name = sheet_source.acell("H2").value
+        month_sheet = ""
 
         # Iterate over the sheet names and get the data columns
         # The configuration of columns should be on the app configuration
@@ -66,8 +68,12 @@ class Reader:
         per_job_prog = (0.8 / len(sheets_names))
 
         for sheet_name in sheets_names:
+            # Get the sheet and the ownership names
             sheet = gsheet.worksheet(sheet_name)
-            sheet_owner = sheet.acell("F1").value
+            ownerships = sheet.get(range_name="F1:F2",
+                                   major_dimension=Dimension.cols)
+            sheet_owner, account_name = ownerships[0]
+            time.sleep(1)
 
             # Get the column config based from the structure of Excel
             # Column E - Date and Time
@@ -76,7 +82,8 @@ class Reader:
             # Column I - Start Time
             # Column J - End Time
             cur_prog = cur_prog + per_job_prog
-            progress(f"Downloading [{sheet_owner} Sheet Data]...", cur_prog)
+            progress(left="Downloading", center=sheet_owner,
+                     right="Sheet Data...", value=cur_prog)
             datedata = sheet.get(
                 range_name="E:E",  major_dimension=Dimension.cols,
                 date_time_render_option=DateTimeOption.serial_number,
@@ -84,7 +91,7 @@ class Reader:
             time.sleep(1)
             data = sheet.get(range_name="F:J",
                              major_dimension=Dimension.cols)
-            time.sleep(3)
+            time.sleep(2)
 
             # Select only the required columns and assign to each variable
             # Also disregard the first 5 initial row of it's column
@@ -99,6 +106,7 @@ class Reader:
                 if strdate:
                     date = datetime(1899, 12, 30) + timedelta(days=int(strdate))
                     date_times[i] = str(date.date())
+                    month_sheet = date.strftime("%B %Y")
             for i, stime in enumerate(start_times):
                 start_times[i] = self._sanitize_time(stime)
             for i, etime in enumerate(end_times):
@@ -108,20 +116,21 @@ class Reader:
                        start_times, end_times]
 
             for index in range(5, len(date_times)):
-                result = [department_name, sheet_owner]
+                result = [department_name, account_name, sheet_owner]
                 for column in columns:
                     try:
                         result.append(column[index])
                     except IndexError:
                         result.append("")
-                # Don't append the 4th index which is the num_processed if empty
-                if result[4]:
+                # Don't append the 5th index which is the num_processed if empty
+                if result[5]:
                     final_data.append(result)
 
         # Call the completed callback method after all fetching are done.
-        args = {"owner": department_name, "final_data": final_data}
-        progress(f"{department_name} - COMPLETED", 1)
-        completed(args)
+        kwargs = {"owner": department_name, "month": month_sheet,
+                  "final_data": final_data}
+        progress(center=department_name, right="Download Completed", value=1)
+        completed(**kwargs)
 
     @staticmethod
     def _sanitize_time(strtime):
@@ -138,15 +147,26 @@ class Reader:
         Standalone method to generate a csv report based
         on the passed DATA library.
         """
+        # Create first the downloads folder
+        path = Reader.BASE_PATH / "downloads"
+        path.mkdir(exist_ok=True)
+
         # Header column names for the CSV
-        headers = ["Department", "Name", "Date and Time", "Task Done",
-                   "Processed", "START", "END"]
+        headers = ["Department", "Account", "Name", "Date",
+                   "Task Done", "Processed", "START", "END"]
 
         # Create the csv file
-        filename = "kpi_records.csv"
-        with open(filename, 'w') as csvfile:
+        filepath = path / "dataexport.csv"
+        with open(filepath, 'w') as csvfile:
             csvwriter = csv.writer(csvfile)
             csvwriter.writerow(headers)
             for rows in data.values():
                 csvwriter.writerows(rows)
+
+        # Determine first the OS then call the correct
+        # command to open the downloads folder
+        if platform.system() == 'Darwin':  # macOS
+            subprocess.call(('open', path))
+        elif platform.system() == 'Windows':  # Windows
+            os.startfile(path)
     
