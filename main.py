@@ -78,6 +78,21 @@ def download_button_event(e):
         download_button.current.update()
 
 
+def load_gsheets_data():
+    data_dir = Path(Reader.BASE_PATH / "downloads/data")
+    if data_dir.exists():
+        for path_name in data_dir.iterdir():
+            with open(path_name, "r") as infile:
+                gsheet_obj = json.loads(infile.read())
+                gsheet_control = GSheetURL("")
+                gsheets_url_column.current.controls.append(gsheet_control)
+                owner = gsheet_obj["owner"]
+                month = gsheet_obj["month"]
+                gsheet_control.update_display_labels(owner=owner,
+                                                     month=month)
+                gsheet_control.update()
+
+
 # --------------------------------
 # FLET MAIN FUNCTION ENTRY POINT
 # --------------------------------
@@ -151,6 +166,9 @@ def main(page: ft.Page):
     page.add(sheet_url_card)
     page.add(sheet_list_container)
     page.add(download_progress_container)
+
+    # Loading of gsheets UI
+    #load_gsheets_data()
 
 
 # Run the main Flet Window App
