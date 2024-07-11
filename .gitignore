@@ -161,4 +161,4 @@ cython_debug/
 
 # Project files configs and temps
 config/apikey.json
-downloads/
+downloads/*

@@ -1,9 +1,10 @@
 import flet as ft
+import json
+from pathlib import Path
 from controls.gsheeturl import GSheetURL
 from controls.progress import Progress
 from modules.reader import Reader
 from modules.styles import Styles
-from pathlib import Path
 
 
 # GLOBAL DATA VARIABLE for creating CSV
@@ -49,8 +50,9 @@ def add_url_button_event(e):
             # Create folder JSON file in downloads folder
             data_dir = Path(Reader.BASE_PATH / "downloads/data")
             data_dir.mkdir(parents=True, exist_ok=True)
-            file = data_dir / "temp.json"
-            file.touch()
+            file = data_dir / (kwargs["owner"].lower().replace(" ", "-") + ".json")
+            with open(file, "w") as outfile:
+                json.dump(kwargs, outfile)
 
         def progress_callback(**kwargs):
             """ Callback for the progress bar control to update. """
