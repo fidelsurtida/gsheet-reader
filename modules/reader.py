@@ -14,7 +14,9 @@
 import gspread
 import csv
 import time
-import subprocess, os, platform
+import os
+import platform
+import subprocess
 from datetime import datetime, timedelta
 from pathlib import Path
 from gspread.utils import Dimension, DateTimeOption, ValueRenderOption
@@ -35,6 +37,7 @@ class Reader:
         to get the data on a correct location in the sheet.
         """
         self.url = url
+        self.timestamp = None
         self.client = gspread.service_account(
             filename=Reader.API_KEY,
             scopes=gspread.auth.READONLY_SCOPES)
@@ -59,7 +62,7 @@ class Reader:
         progress(left="Fetching Sheet Ownership...", value=0.1)
         sheet_source = gsheet.worksheet("Instructions")
         department_name = sheet_source.acell("H2").value
-        month_sheet = ""
+        month_sheet, month_sheet_numeric = "", None
 
         # Iterate over the sheet names and get the data columns
         # The configuration of columns should be on the app configuration
@@ -107,6 +110,7 @@ class Reader:
                     date = datetime(1899, 12, 30) + timedelta(days=int(strdate))
                     date_times[i] = str(date.date())
                     month_sheet = date.strftime("%B %Y")
+                    month_sheet_numeric = date.strftime("%m-%Y")
             for i, stime in enumerate(start_times):
                 start_times[i] = self._sanitize_time(stime)
             for i, etime in enumerate(end_times):
@@ -127,7 +131,10 @@ class Reader:
                     final_data.append(result)
 
         # Call the completed callback method after all fetching are done.
-        kwargs = {"owner": department_name, "month": month_sheet,
+        self.timestamp = datetime.now()
+        kwargs = {"url": self.url, "owner": department_name,
+                  "month": month_sheet, "month_num": month_sheet_numeric,
+                  "timestamp": self.timestamp.strftime("%B %d, %Y - %I:%M %p"),
                   "final_data": final_data}
         progress(center=department_name, right="Download Completed", value=1)
         completed(**kwargs)

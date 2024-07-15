@@ -8,7 +8,6 @@
 # ---------------------------------------------------
 
 import flet as ft
-from datetime import datetime
 from modules.styles import Styles
 
 
@@ -99,12 +98,12 @@ class GSheetURL(ft.Container):
             ], spacing=1)
         ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
 
-    def update_display_labels(self, *, owner, month):
+    def update_display_labels(self, *, owner, month, timestamp,
+                              autoupdate=True):
         """
         This method will be used to update the display fields of this
         control. Department Owner, Timestamp and status icon.
         """
-        timestamp = datetime.now().strftime("%B %d, %Y - %I:%M %p")
         self._owner_name_text.current.value = owner
         self._owner_container.current.bgcolor = ft.colors.TEAL_800
         self._month_container.current.bgcolor = ft.colors.TEAL_600
@@ -115,4 +114,6 @@ class GSheetURL(ft.Container):
         self._month_text.current.value = month
         self._remove_button.current.disabled = False
         self._download_button.current.disabled = False
-        self.update()
+        # Update only this control if specified, specify false on app load
+        if autoupdate:
+            self.update()

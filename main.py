@@ -41,16 +41,19 @@ def add_url_button_event(e):
         def fetch_completed(**kwargs):
             """ Callback method after the data fetch has been completed. """
             DATA[kwargs["owner"]] = kwargs["final_data"]
-            gsheeturl_control.update_display_labels(owner=kwargs["owner"],
-                                                    month=kwargs["month"])
+            gsheeturl_control.update_display_labels(
+                owner=kwargs["owner"], month=kwargs["month"],
+                timestamp=kwargs["timestamp"])
             add_url_button.current.disabled = False
             download_button.current.disabled = False
             e.page.update()
 
-            # Create folder JSON file in downloads folder
+            # Save the downloaded data to its own JSON file
             data_dir = Path(Reader.BASE_PATH / "downloads/data")
             data_dir.mkdir(parents=True, exist_ok=True)
-            file = data_dir / (kwargs["owner"].lower().replace(" ", "-") + ".json")
+            owner_formatted = kwargs["owner"].lower().replace(" ", "-")
+            full_name = f"{kwargs["month_num"]}-{owner_formatted}.json"
+            file = data_dir / full_name
             with open(file, "w") as outfile:
                 json.dump(kwargs, outfile)
 
@@ -65,7 +68,7 @@ def add_url_button_event(e):
                           completed=fetch_completed)
 
 
-def download_button_event(e):
+def download_button_event():
     """
     This button event will create a csv report based
     on the saved url data json files.
@@ -78,19 +81,25 @@ def download_button_event(e):
         download_button.current.update()
 
 
-def load_gsheets_data():
+def load_local_gsheets_data():
+    """
+    This method will be called on creation of application controls.
+    It will check for the data folder and load neccessary saved
+    gsheet url data.
+    """
     data_dir = Path(Reader.BASE_PATH / "downloads/data")
     if data_dir.exists():
         for path_name in data_dir.iterdir():
-            with open(path_name, "r") as infile:
-                gsheet_obj = json.loads(infile.read())
-                gsheet_control = GSheetURL("")
+            with open(path_name, "r") as file:
+                gsheet_data = json.loads(file.read())
+                gsheet_control = GSheetURL(gsheet_data["url"])
                 gsheets_url_column.current.controls.append(gsheet_control)
-                owner = gsheet_obj["owner"]
-                month = gsheet_obj["month"]
-                gsheet_control.update_display_labels(owner=owner,
-                                                     month=month)
-                gsheet_control.update()
+                owner = gsheet_data["owner"]
+                month = gsheet_data["month"]
+                timestamp = gsheet_data["timestamp"]
+                gsheet_control.update_display_labels(
+                    owner=owner, month=month, timestamp=timestamp,
+                    autoupdate=False)
 
 
 # --------------------------------
@@ -162,13 +171,13 @@ def main(page: ft.Page):
             ], spacing=30
         ), height=70, padding=10)
 
+    # Loading of Saved Local GSheets Data into GSheets URL UI
+    load_local_gsheets_data()
+
     # Add the main elements of the application
     page.add(sheet_url_card)
     page.add(sheet_list_container)
     page.add(download_progress_container)
-
-    # Loading of gsheets UI
-    #load_gsheets_data()
 
 
 # Run the main Flet Window App
