@@ -1,5 +1,7 @@
 import flet as ft
 import json
+from datetime import datetime
+from calendar import month_name as months
 from pathlib import Path
 from controls.gsheeturl import GSheetURL
 from controls.progress import Progress
@@ -110,7 +112,7 @@ def main(page: ft.Page):
     # Set the Window Properties
     page.title = "GSheet Reader"
     page.window.width = 900
-    page.window.height = 600
+    page.window.height = 650
     page.window.resizable = False
     page.theme_mode = ft.ThemeMode.DARK
 
@@ -136,15 +138,40 @@ def main(page: ft.Page):
                               tooltip="DATA SETTINGS ")
         ], spacing=15), padding=20))
 
+    # Variables for the month and years
+    month_options = [ft.dropdown.Option(m) for m in list(months)[1:]]
+    cur_year = int(datetime.now().strftime("%Y"))
+    year_options = [year for year in range(cur_year, cur_year-6, -1)]
+    year_options = [ft.dropdown.Option(str(y)) for y in year_options]
+
     # Google Sheets List Container
     sheet_list_container = ft.Card(content=ft.Column([
         ft.Container(content=ft.Row([
-                        ft.Icon("event_note_rounded",
-                                color=ft.colors.WHITE60),
-                        ft.Text("GSHEETS SAVED URLS",
-                                weight=ft.FontWeight.BOLD,
-                                color=ft.colors.WHITE54)
-                     ]),
+                        ft.Row([
+                            ft.Icon("event_note_rounded",
+                                    color=ft.colors.WHITE60),
+                            ft.Text("GSHEETS SAVED URLS",
+                                    weight=ft.FontWeight.BOLD,
+                                    color=ft.colors.WHITE54)
+                        ]),
+                        ft.Row([
+                            ft.ElevatedButton(text="Recently Added",
+                               icon="new_releases_rounded",
+                               style=Styles.recently_added_style,
+                               height=45),
+                            ft.Dropdown(options=month_options,
+                               bgcolor=ft.colors.BLUE_GREY_700,
+                               border_color=ft.colors.BLUE_GREY_600,
+                               width=150, height=45, text_size=15,
+                               prefix_icon="calendar_month_rounded",
+                               value=datetime.now().strftime("%B")),
+                            ft.Dropdown(options=year_options,
+                               bgcolor=ft.colors.BLUE_GREY_700,
+                               border_color=ft.colors.BLUE_GREY_600,
+                               width=90, height=45, text_size=15,
+                               value=datetime.now().strftime("%Y"))
+                        ])
+                     ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
                      bgcolor=ft.colors.BLUE_GREY_900,
                      padding=ft.padding.only(20, 8, 20, 10),
                      border_radius=ft.border_radius.only(12, 12, 0, 0)),
@@ -155,7 +182,7 @@ def main(page: ft.Page):
                      padding=ft.padding.all(10),
                      margin=ft.margin.only(5, 0, 5, 0),
                      border_radius=5)
-    ]), height=350)
+    ]), height=410)
 
     # Download Button and Progress Bar Container
     download_progress_container = ft.Container(
