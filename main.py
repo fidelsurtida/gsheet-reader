@@ -1,9 +1,8 @@
 import flet as ft
 import json
-from datetime import datetime
-from calendar import month_name as months
 from pathlib import Path
 from controls.gsheeturl import GSheetURL
+from controls.gsheetlister import GSheetLister
 from controls.progress import Progress
 from modules.reader import Reader
 from modules.styles import Styles
@@ -16,10 +15,9 @@ DATA = {}
 gsheet_url = ft.Ref[ft.TextField]()
 download_button = ft.Ref[ft.ElevatedButton]()
 add_url_button = ft.Ref[ft.ElevatedButton]()
-progress_container = ft.Ref[ft.Column]()
-gsheets_url_column = ft.Ref[ft.Column]()
 
 # Custom Control References
+gsheetlister_control = GSheetLister()
 progressbar_control = Progress()
 
 
@@ -34,7 +32,7 @@ def add_url_button_event(e):
         # Create a GSheetURL control and append it to the gsheets cont
         gsheeturl_control = GSheetURL(url)
         gsheet_url.current.value = ""
-        gsheets_url_column.current.controls.append(gsheeturl_control)
+        gsheetlister_control.append(gsheeturl_control)
         add_url_button.current.disabled = True
         download_button.current.disabled = True
         progressbar_control.reset()
@@ -95,7 +93,7 @@ def load_local_gsheets_data():
             with open(path_name, "r") as file:
                 gsheet_data = json.loads(file.read())
                 gsheet_control = GSheetURL(gsheet_data["url"])
-                gsheets_url_column.current.controls.append(gsheet_control)
+                gsheetlister_control.append(gsheet_control)
                 owner = gsheet_data["owner"]
                 month = gsheet_data["month"]
                 timestamp = gsheet_data["timestamp"]
@@ -138,52 +136,6 @@ def main(page: ft.Page):
                               tooltip="DATA SETTINGS ")
         ], spacing=15), padding=20))
 
-    # Variables for the month and years
-    month_options = [ft.dropdown.Option(m) for m in list(months)[1:]]
-    cur_year = int(datetime.now().strftime("%Y"))
-    year_options = [year for year in range(cur_year, cur_year-6, -1)]
-    year_options = [ft.dropdown.Option(str(y)) for y in year_options]
-
-    # Google Sheets List Container
-    sheet_list_container = ft.Card(content=ft.Column([
-        ft.Container(content=ft.Row([
-                        ft.Row([
-                            ft.Icon("event_note_rounded",
-                                    color=ft.colors.WHITE60),
-                            ft.Text("GSHEETS SAVED URLS",
-                                    weight=ft.FontWeight.BOLD,
-                                    color=ft.colors.WHITE54)
-                        ]),
-                        ft.Row([
-                            ft.ElevatedButton(text="Recently Added",
-                               icon="new_releases_rounded",
-                               style=Styles.recently_added_style,
-                               height=45),
-                            ft.Dropdown(options=month_options,
-                               bgcolor=ft.colors.BLUE_GREY_700,
-                               border_color=ft.colors.BLUE_GREY_600,
-                               width=150, height=45, text_size=15,
-                               prefix_icon="calendar_month_rounded",
-                               value=datetime.now().strftime("%B")),
-                            ft.Dropdown(options=year_options,
-                               bgcolor=ft.colors.BLUE_GREY_700,
-                               border_color=ft.colors.BLUE_GREY_600,
-                               width=90, height=45, text_size=15,
-                               value=datetime.now().strftime("%Y"))
-                        ])
-                     ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN),
-                     bgcolor=ft.colors.BLUE_GREY_900,
-                     padding=ft.padding.only(20, 8, 20, 10),
-                     border_radius=ft.border_radius.only(12, 12, 0, 0)),
-
-        ft.Container(content=ft.Column([],
-                     ref=gsheets_url_column, spacing=15,
-                     scroll=ft.ScrollMode.AUTO, height=250),
-                     padding=ft.padding.all(10),
-                     margin=ft.margin.only(5, 0, 5, 0),
-                     border_radius=5)
-    ]), height=410)
-
     # Download Button and Progress Bar Container
     download_progress_container = ft.Container(
         content=ft.Row([
@@ -203,7 +155,7 @@ def main(page: ft.Page):
 
     # Add the main elements of the application
     page.add(sheet_url_card)
-    page.add(sheet_list_container)
+    page.add(gsheetlister_control)
     page.add(download_progress_container)
 
 
