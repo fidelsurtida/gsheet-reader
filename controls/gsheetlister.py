@@ -9,8 +9,13 @@
 # ---------------------------------------------------
 
 import flet as ft
+import json
+import time
+from pathlib import Path
 from datetime import datetime
 from calendar import month_name as months
+from controls.gsheeturl import GSheetURL
+from modules.reader import Reader
 from modules.styles import Styles
 
 
@@ -28,9 +33,16 @@ class GSheetLister(ft.Card):
 
         # Declaration of Flet Control References
         self._gsheets_url_column = ft.Ref[ft.Column]()
+        self._month_dropdown = ft.Ref[ft.Dropdown]()
+        self._year_dropdown = ft.Ref[ft.Dropdown]()
+        self._loading_container = ft.Ref[ft.Container]()
+        self._progress_ring = ft.Ref[ft.ProgressRing]()
+        self._loading_message = ft.Ref[ft.Text]()
+        self._loading_icon = ft.Ref[ft.Icon]()
 
         # Determine the list of months and years to the dropdown
-        month_options = [ft.dropdown.Option(m) for m in list(months)[1:]]
+        month_options = [ft.dropdown.Option(text=m, key=str(k).zfill(2))
+                         for k, m in enumerate(list(months)[1:], start=1)]
         cur_year = int(datetime.now().strftime("%Y"))
         year_options = [year for year in range(cur_year, cur_year - 6, -1)]
         year_options = [ft.dropdown.Option(str(y)) for y in year_options]
@@ -52,13 +64,17 @@ class GSheetLister(ft.Card):
                        style=Styles.recently_added_style,
                        height=35),
                     ft.Dropdown(options=month_options,
+                       ref=self._month_dropdown,
+                       on_change=self._filter_gsheeturl,
                        bgcolor=ft.colors.BLUE_GREY_700,
                        border_color=ft.colors.BLUE_GREY_600,
                        width=150, height=35, text_size=15,
                        content_padding=ft.padding.symmetric(5, 10),
                        prefix_icon="calendar_month_rounded",
-                       value=datetime.now().strftime("%B")),
+                       value=datetime.now().strftime("%m")),
                     ft.Dropdown(options=year_options,
+                       ref=self._year_dropdown,
+                       on_change=self._filter_gsheeturl,
                        bgcolor=ft.colors.BLUE_GREY_700,
                        border_color=ft.colors.BLUE_GREY_600,
                        width=90, height=35, text_size=15,
@@ -80,17 +96,102 @@ class GSheetLister(ft.Card):
 
                 ft.Container(content=ft.Row([
                     ft.ProgressRing(color=ft.colors.WHITE54,
-                                    height=30, width=30),
+                                    height=25, width=25,
+                                    ref=self._progress_ring),
+                    ft.Icon("find_in_page_rounded",
+                            size=30, visible=False,
+                            color=ft.colors.WHITE54,
+                            ref=self._loading_icon),
                     ft.Text("LOADING GSHEETS DATA...",
-                            weight=ft.FontWeight.BOLD)
-                ], alignment=ft.MainAxisAlignment.CENTER, spacing=20),
-                   height=310, visible=False)
+                            weight=ft.FontWeight.BOLD,
+                            ref=self._loading_message)
+                ], alignment=ft.MainAxisAlignment.CENTER, spacing=15),
+                   ref=self._loading_container, height=310, visible=False)
             ])
         ])
 
     def append(self, gsheeturl):
-        """
-        This method appends a GSheetURL object to its Column List.
-        """
+        """ This method appends a GSheetURL object to its Column List. """
         if gsheeturl:
             self._gsheets_url_column.current.controls.append(gsheeturl)
+
+    def reset(self):
+        """ This method clears the list of gsheeturls. """
+        self._gsheets_url_column.current.controls.clear()
+
+    def _disable_filter_controls(self, flag):
+        """ This will toggle to disable or not the filter controls. """
+        self._month_dropdown.current.disabled = flag
+        self._year_dropdown.current.disabled = flag
+
+    def _toggle_loading_indicator(self, *, visible, isloading=False):
+        """
+        Toggles the loading based on the given parameters:
+        visible=True & isloading=True - show loading with progress ring
+        visible=True & isloading=False - show icon with not found data message
+        visible=False - hide the loading container entirely
+        """
+        month = self._month_dropdown.current.value
+        year = self._year_dropdown.current.value
+        self._loading_container.current.visible = True
+
+        match [visible, isloading]:
+            case [True, True]:
+                self._progress_ring.current.visible = True
+                self._loading_icon.current.visible = False
+                self._loading_message.current.value = "LOADING GSHEETS DATA..."
+            case [True, False]:
+                self._progress_ring.current.visible = False
+                self._loading_icon.current.visible = True
+                filterstr = datetime.strptime(f"{month} {year}", "%m %Y")
+                filterstr = filterstr.strftime("%B %Y").upper()
+                message = f"NO GSHEETS DATA SAVED ON {filterstr}"
+                self._loading_message.current.value = message
+            case [False, False]:
+                self._loading_container.current.visible = False
+
+    def _filter_gsheeturl(self, e):
+        """
+        This callback method will be used by the dropdown to trigger
+        loading of new gsheeturl data based on selected month or year.
+        """
+        # Reset first the existing list of gsheeturls
+        self.reset()
+        # Show the loading indicator and wait for 2 sec
+        self._toggle_loading_indicator(visible=True, isloading=True)
+        self._disable_filter_controls(True)
+        e.page.update()
+        time.sleep(1)
+        # Start loading the gsheeturl data based on dropdown values
+        self._load_gsheeturl_data()
+        # Update the loading container and reset the filter controls
+        items_flag = not bool(len(self._gsheets_url_column.current.controls))
+        self._toggle_loading_indicator(visible=items_flag)
+        self._disable_filter_controls(False)
+        e.page.update()
+
+    def _load_gsheeturl_data(self):
+        """
+        This method will load json from data folder based on the month
+        and year dropdown values. It will create a gsheeturl control
+        and cache its loaded data into memory.
+        """
+        month = self._month_dropdown.current.value
+        year = self._year_dropdown.current.value
+        data_dir = Path(Reader.BASE_PATH / "downloads/data")
+
+        if not data_dir.exists():
+            return  # If data folder does not exist then exit this method
+
+        for path_name in data_dir.iterdir():
+            if path_name.name.startswith(f"{month}-{year}"):
+                with open(path_name, "r") as file:
+                    gsheet_data = json.loads(file.read())
+                    gsheet_control = GSheetURL(gsheet_data["url"])
+                    self.append(gsheet_control)
+                    owner = gsheet_data["owner"]
+                    month = gsheet_data["month"]
+                    timestamp = gsheet_data["timestamp"]
+                    gsheet_control.update_display_labels(
+                        owner=owner, month=month, timestamp=timestamp,
+                        autoupdate=False)
