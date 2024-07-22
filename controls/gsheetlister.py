@@ -6,6 +6,8 @@
 # container that contains a header with filter
 # control dropdowns and buttons. The body is also
 # a column that lists gsheeturl controls.
+# This control autoloads the saved data on the
+# current month and year if there is any.
 # ---------------------------------------------------
 
 import flet as ft
@@ -110,6 +112,13 @@ class GSheetLister(ft.Card):
             ])
         ])
 
+        # Load the GSheets URL data on initialize depending on current
+        # month and year in dropdown. Show the message indicator if
+        # not at least 1 gsheet url data is loaded.
+        self._load_gsheeturl_data()
+        if not len(self._gsheets_url_column.current.controls):
+            self._toggle_message_indicator(isloading=False)
+
     def append(self, gsheeturl):
         """ This method appends a GSheetURL object to its Column List. """
         if gsheeturl:
@@ -119,21 +128,24 @@ class GSheetLister(ft.Card):
         """ This method clears the list of gsheeturls. """
         self._gsheets_url_column.current.controls.clear()
 
-    def _disable_filter_controls(self, flag):
+    def disable_filter_controls(self, flag):
         """ This will toggle to disable or not the filter controls. """
         self._month_dropdown.current.disabled = flag
         self._year_dropdown.current.disabled = flag
 
-    def _toggle_loading_indicator(self, *, visible, isloading=False):
+    def _toggle_message_indicator(self, *, isloading=False):
         """
         Toggles the loading based on the given parameters:
         visible=True & isloading=True - show loading with progress ring
         visible=True & isloading=False - show icon with not found data message
         visible=False - hide the loading container entirely
         """
+        self._loading_container.current.visible = True
         month = self._month_dropdown.current.value
         year = self._year_dropdown.current.value
-        self._loading_container.current.visible = True
+        visible = isloading
+        if not isloading:
+            visible = not bool(len(self._gsheets_url_column.current.controls))
 
         match [visible, isloading]:
             case [True, True]:
@@ -157,17 +169,16 @@ class GSheetLister(ft.Card):
         """
         # Reset first the existing list of gsheeturls
         self.reset()
-        # Show the loading indicator and wait for 2 sec
-        self._toggle_loading_indicator(visible=True, isloading=True)
-        self._disable_filter_controls(True)
+        # Show the loading indicator and wait for 1 sec
+        self._toggle_message_indicator(isloading=True)
+        self.disable_filter_controls(True)
         e.page.update()
         time.sleep(1)
         # Start loading the gsheeturl data based on dropdown values
         self._load_gsheeturl_data()
         # Update the loading container and reset the filter controls
-        items_flag = not bool(len(self._gsheets_url_column.current.controls))
-        self._toggle_loading_indicator(visible=items_flag)
-        self._disable_filter_controls(False)
+        self._toggle_message_indicator(isloading=False)
+        self.disable_filter_controls(False)
         e.page.update()
 
     def _load_gsheeturl_data(self):

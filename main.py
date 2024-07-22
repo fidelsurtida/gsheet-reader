@@ -33,6 +33,7 @@ def add_url_button_event(e):
         gsheeturl_control = GSheetURL(url)
         gsheet_url.current.value = ""
         gsheetlister_control.append(gsheeturl_control)
+        gsheetlister_control.disable_filter_controls(True)
         add_url_button.current.disabled = True
         download_button.current.disabled = True
         progressbar_control.reset()
@@ -46,6 +47,7 @@ def add_url_button_event(e):
                 timestamp=kwargs["timestamp"])
             add_url_button.current.disabled = False
             download_button.current.disabled = False
+            gsheetlister_control.disable_filter_controls(False)
             e.page.update()
 
             # Save the downloaded data to its own JSON file
@@ -79,27 +81,6 @@ def download_button_event():
         Reader.generate_csv_report(DATA)
         download_button.current.disabled = False
         download_button.current.update()
-
-
-def load_local_gsheets_data():
-    """
-    This method will be called on creation of application controls.
-    It will check for the data folder and load neccessary saved
-    gsheet url data.
-    """
-    data_dir = Path(Reader.BASE_PATH / "downloads/data")
-    if data_dir.exists():
-        for path_name in data_dir.iterdir():
-            with open(path_name, "r") as file:
-                gsheet_data = json.loads(file.read())
-                gsheet_control = GSheetURL(gsheet_data["url"])
-                gsheetlister_control.append(gsheet_control)
-                owner = gsheet_data["owner"]
-                month = gsheet_data["month"]
-                timestamp = gsheet_data["timestamp"]
-                gsheet_control.update_display_labels(
-                    owner=owner, month=month, timestamp=timestamp,
-                    autoupdate=False)
 
 
 # --------------------------------
@@ -149,9 +130,6 @@ def main(page: ft.Page):
                 style=Styles.download_data_style)
             ], spacing=30
         ), height=70, padding=10)
-
-    # Loading of Saved Local GSheets Data into GSheets URL UI
-    load_local_gsheets_data()
 
     # Add the main elements of the application
     page.add(sheet_url_card)

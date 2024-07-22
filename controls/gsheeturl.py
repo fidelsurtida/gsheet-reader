@@ -41,8 +41,8 @@ class GSheetURL(ft.Container):
         # Initialize the custom control design UI
         self.content = ft.Row([
             ft.ProgressRing(ref=self._progress_ring, height=20, width=20),
-            ft.Icon("check_circle_rounded", ref=self._completed_icon,
-                    size=30, color=ft.colors.GREEN, visible=False),
+            ft.Icon("file_present_rounded", ref=self._completed_icon,
+                    size=30, color=ft.colors.LIGHT_BLUE_300, visible=False),
             ft.Column([
                 ft.Row([
                     ft.Icon("insert_link_rounded", size=14),
@@ -105,15 +105,22 @@ class GSheetURL(ft.Container):
         control. Department Owner, Timestamp and status icon.
         """
         self._owner_name_text.current.value = owner
-        self._owner_container.current.bgcolor = ft.colors.TEAL_800
-        self._month_container.current.bgcolor = ft.colors.TEAL_600
-        self._timestamp_container.current.bgcolor = ft.colors.TEAL_600
+        self._owner_container.current.bgcolor = ft.colors.LIGHT_BLUE_800
+        self._month_container.current.bgcolor = ft.colors.LIGHT_BLUE_700
+        self._timestamp_container.current.bgcolor = ft.colors.LIGHT_BLUE_700
         self._progress_ring.current.visible = False
         self._completed_icon.current.visible = True
         self._timestamp_text.current.value = f"TIMESTAMP: {timestamp}"
         self._month_text.current.value = month
         self._remove_button.current.disabled = False
         self._download_button.current.disabled = False
+
         # Update only this control if specified, specify false on app load
+        # If autoupdate, change the completed icon to check, else a file
         if autoupdate:
+            self._completed_icon.current.name = "check_circle_rounded"
+            self._completed_icon.current.color = ft.colors.GREEN
+            self._owner_container.current.bgcolor = ft.colors.TEAL_800
+            self._month_container.current.bgcolor = ft.colors.TEAL_600
+            self._timestamp_container.current.bgcolor = ft.colors.TEAL_600
             self.update()
