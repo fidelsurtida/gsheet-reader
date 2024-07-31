@@ -23,6 +23,9 @@ from modules.styles import Styles
 
 class GSheetLister(ft.Card):
 
+    # Class Variable to track Recents and URLs List
+    RECENTS = []
+
     def __init__(self):
         """
         Custom Flet Control for displaying a list of
@@ -41,6 +44,7 @@ class GSheetLister(ft.Card):
         self._progress_ring = ft.Ref[ft.ProgressRing]()
         self._loading_message = ft.Ref[ft.Text]()
         self._loading_icon = ft.Ref[ft.Icon]()
+        self._recent_button = ft.Ref[ft.ElevatedButton]()
 
         # Determine the list of months and years to the dropdown
         month_options = [ft.dropdown.Option(text=m, key=str(k).zfill(2))
@@ -62,6 +66,8 @@ class GSheetLister(ft.Card):
                 ]),
                 ft.Row([
                     ft.ElevatedButton(text="Recently Added",
+                       ref=self._recent_button,
+                       on_click=lambda e: self.show_recently_added(),
                        icon="new_releases_rounded",
                        style=Styles.recently_added_style,
                        height=35),
@@ -119,10 +125,26 @@ class GSheetLister(ft.Card):
         if not len(self._gsheets_url_column.current.controls):
             self._toggle_message_indicator(isloading=False)
 
-    def append(self, gsheeturl):
+    def append(self, gsheeturl, first=False):
         """ This method appends a GSheetURL object to its Column List. """
         if gsheeturl:
-            self._gsheets_url_column.current.controls.append(gsheeturl)
+            if first:
+                self._gsheets_url_column.current.controls.insert(0, gsheeturl)
+            else:
+                self._gsheets_url_column.current.controls.append(gsheeturl)
+
+    def add_to_recents(self, filename):
+        """
+        This method will be used to add a recently saved file name to
+        the recents list. It will also make sure to save only latest
+        ten items of unique urls added.
+        """
+        self.RECENTS.insert(0, filename)
+        self.RECENTS = self.RECENTS[:10]
+        # Save the current RECENTS into a JSON file
+        file = Path(Reader.BASE_PATH / "downloads/data/recents.json")
+        with open(file, "w") as outfile:
+            json.dump(self.RECENTS, outfile)
 
     def reset(self):
         """ This method clears the list of gsheeturls. """
@@ -132,6 +154,7 @@ class GSheetLister(ft.Card):
         """ This will toggle to disable or not the filter controls. """
         self._month_dropdown.current.disabled = flag
         self._year_dropdown.current.disabled = flag
+        self._recent_button.current.disabled = flag
 
     def _toggle_message_indicator(self, *, isloading=False):
         """
@@ -179,6 +202,7 @@ class GSheetLister(ft.Card):
         # Update the loading container and reset the filter controls
         self._toggle_message_indicator(isloading=False)
         self.disable_filter_controls(False)
+        self._recent_button.current.style = Styles.recently_added_style
         e.page.update()
 
     def _load_gsheeturl_data(self):
@@ -196,13 +220,49 @@ class GSheetLister(ft.Card):
 
         for path_name in data_dir.iterdir():
             if path_name.name.startswith(f"{month}-{year}"):
-                with open(path_name, "r") as file:
-                    gsheet_data = json.loads(file.read())
-                    gsheet_control = GSheetURL(gsheet_data["url"])
-                    self.append(gsheet_control)
-                    owner = gsheet_data["owner"]
-                    month = gsheet_data["month"]
-                    timestamp = gsheet_data["timestamp"]
-                    gsheet_control.update_display_labels(
-                        owner=owner, month=month, timestamp=timestamp,
-                        autoupdate=False)
+                self._create_gsheeturl_control(path_name.name, diskload=True)
+
+        # Load also the recents.json file into RECENTS list variable
+        recents_file = data_dir / "recents.json"
+        if recents_file.exists():
+            with open(recents_file) as file:
+                self.RECENTS = json.loads(file.read())
+
+    def show_recently_added(self):
+        """
+        This method will be used by the recently added button to show
+        a list of gsheeturls from the recent.json which shows the
+        latest top 10 added urls.
+        """
+        # Reset first the existing list of gsheeturls
+        self.reset()
+        # Show the loading indicator and wait for 1 sec
+        self._toggle_message_indicator(isloading=True)
+        self.disable_filter_controls(True)
+        self._recent_button.current.style = Styles.recently_active_style
+        self.update()
+        time.sleep(1)
+
+        # Load and create the gsheeturl controls from RECENTS list
+        for filename in self.RECENTS:
+            self._create_gsheeturl_control(filename, diskload=False)
+
+        # Update the loading container and reset the filter controls
+        self._loading_container.current.visible = False
+        self.disable_filter_controls(False)
+        self.update()
+
+    def _create_gsheeturl_control(self, filename, diskload):
+        """ Helper method to create a gsheeturl control from filename. """
+        data_dir = Path(Reader.BASE_PATH / "downloads/data")
+        if data_dir.exists():
+            with open((data_dir / filename), "r") as file:
+                gsheet_data = json.loads(file.read())
+                gsheet_control = GSheetURL(gsheet_data["url"])
+                self.append(gsheet_control)
+                owner = gsheet_data["owner"]
+                month = gsheet_data["month"]
+                timestamp = gsheet_data["timestamp"]
+                gsheet_control.update_display_labels(
+                    owner=owner, month=month, timestamp=timestamp,
+                    autoupdate=False, diskload=diskload)

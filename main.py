@@ -27,12 +27,16 @@ def add_url_button_event(e):
     the container UI interface and perform a data
     fetch on the Google Sheet.
     """
+    # Trigger first the recently added event to load recents list
+    gsheetlister_control.show_recently_added()
+
+    # Then proceed adding and creating the gsheet URL
     url = gsheet_url.current.value
     if url:
         # Create a GSheetURL control and append it to the gsheets cont
         gsheeturl_control = GSheetURL(url)
         gsheet_url.current.value = ""
-        gsheetlister_control.append(gsheeturl_control)
+        gsheetlister_control.append(gsheeturl_control, first=True)
         gsheetlister_control.disable_filter_controls(True)
         add_url_button.current.disabled = True
         download_button.current.disabled = True
@@ -44,7 +48,8 @@ def add_url_button_event(e):
             DATA[kwargs["owner"]] = kwargs["final_data"]
             gsheeturl_control.update_display_labels(
                 owner=kwargs["owner"], month=kwargs["month"],
-                timestamp=kwargs["timestamp"])
+                timestamp=kwargs["timestamp"], diskload=False)
+            # Update the states of UI Controls
             add_url_button.current.disabled = False
             download_button.current.disabled = False
             gsheetlister_control.disable_filter_controls(False)
@@ -58,6 +63,9 @@ def add_url_button_event(e):
             file = data_dir / full_name
             with open(file, "w") as outfile:
                 json.dump(kwargs, outfile)
+
+            # Save to the gsheetlister RECENTS list
+            gsheetlister_control.add_to_recents(full_name)
 
         def progress_callback(**kwargs):
             """ Callback for the progress bar control to update. """

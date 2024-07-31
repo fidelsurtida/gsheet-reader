@@ -99,7 +99,7 @@ class GSheetURL(ft.Container):
         ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
 
     def update_display_labels(self, *, owner, month, timestamp,
-                              autoupdate=True):
+                              autoupdate=True, diskload=True):
         """
         This method will be used to update the display fields of this
         control. Department Owner, Timestamp and status icon.
@@ -117,10 +117,11 @@ class GSheetURL(ft.Container):
 
         # Update only this control if specified, specify false on app load
         # If autoupdate, change the completed icon to check, else a file
-        if autoupdate:
+        if not diskload:
             self._completed_icon.current.name = "check_circle_rounded"
             self._completed_icon.current.color = ft.colors.GREEN
             self._owner_container.current.bgcolor = ft.colors.TEAL_800
             self._month_container.current.bgcolor = ft.colors.TEAL_600
             self._timestamp_container.current.bgcolor = ft.colors.TEAL_600
+        if autoupdate:
             self.update()

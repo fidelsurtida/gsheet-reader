@@ -68,6 +68,16 @@ class Styles:
             ft.ControlState.DEFAULT: ft.BorderSide(1, ft.colors.BLACK26)
         }
     )
+    recently_active_style = ft.ButtonStyle(
+        shape=ft.RoundedRectangleBorder(radius=5),
+        color=ft.colors.DEEP_ORANGE_800,
+        bgcolor={
+            ft.ControlState.DEFAULT: ft.colors.ORANGE_ACCENT
+        },
+        side={
+            ft.ControlState.DEFAULT: ft.BorderSide(3, ft.colors.ORANGE_700)
+        }
+    )
     download_data_style = ft.ButtonStyle(
         shape=ft.RoundedRectangleBorder(radius=10),
         overlay_color={
