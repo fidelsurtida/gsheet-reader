@@ -27,11 +27,23 @@ def add_url_button_event(e):
     the container UI interface and perform a data
     fetch on the Google Sheet.
     """
+    url = gsheet_url.current.value
+
+    # Perform a validation first on the url if it exists already on data
+    if url in gsheetlister_control.URLS:
+        dlg = ft.AlertDialog(
+            content=ft.Text("Specified URL already existed.",
+                            text_align=ft.TextAlign.CENTER,
+                            weight=ft.FontWeight.BOLD),
+            actions=[ft.TextButton("OK", on_click=lambda a: a.page.close(dlg))],
+            modal=True, bgcolor=ft.colors.GREY_900)
+        e.page.open(dlg)
+        return
+
     # Trigger first the recently added event to load recents list
     gsheetlister_control.show_recently_added()
 
     # Then proceed adding and creating the gsheet URL
-    url = gsheet_url.current.value
     if url:
         # Create a GSheetURL control and append it to the gsheets cont
         gsheeturl_control = GSheetURL(url)

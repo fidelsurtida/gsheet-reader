@@ -25,6 +25,7 @@ class GSheetLister(ft.Card):
 
     # Class Variable to track Recents and URLs List
     RECENTS = []
+    URLS = []
 
     def __init__(self):
         """
@@ -210,6 +211,8 @@ class GSheetLister(ft.Card):
         This method will load json from data folder based on the month
         and year dropdown values. It will create a gsheeturl control
         and cache its loaded data into memory.
+        This will also load the recents.json file and also list all
+        the existing URLS in the data folder.
         """
         month = self._month_dropdown.current.value
         year = self._year_dropdown.current.value
@@ -218,7 +221,13 @@ class GSheetLister(ft.Card):
         if not data_dir.exists():
             return  # If data folder does not exist then exit this method
 
+        # Create a gsheeturl control if there are existing urls on this month
+        # Also save the urls of all existing data
         for path_name in data_dir.iterdir():
+            with open(path_name, "r") as file:
+                if not path_name.name.startswith("recents"):
+                    self.URLS.append(json.loads(file.read())["url"])
+            # Create a gsheeturl control if it's for this month
             if path_name.name.startswith(f"{month}-{year}"):
                 self._create_gsheeturl_control(path_name.name, diskload=True)
 
