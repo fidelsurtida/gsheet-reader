@@ -30,14 +30,36 @@ def add_url_button_event(e):
     url = gsheet_url.current.value
 
     # Perform a validation first on the url if it exists already on data
-    if url in gsheetlister_control.URLS:
+    if url in gsheetlister_control.URLS_DB.keys():
+        data = gsheetlister_control.URLS_DB[url]
+
+        def proceed_event(ev):
+            ev.page.close(dlg)
+            gsheetlister_control.filter_gsheeturl(month=data["month_num"],
+                                                  year=data["year"])
+
         dlg = ft.AlertDialog(
-            content=ft.Text("Specified URL already existed.",
-                            text_align=ft.TextAlign.CENTER,
-                            weight=ft.FontWeight.BOLD),
-            actions=[ft.TextButton("OK", on_click=lambda a: a.page.close(dlg))],
+            title=ft.Row([
+                ft.Icon("warning_rounded", color=ft.colors.ORANGE_ACCENT,
+                        size=32),
+                ft.Text("GSHEET URL EXISTS", weight=ft.FontWeight.BOLD,
+                        text_align=ft.TextAlign.CENTER, size=20)
+            ], spacing=10),
+            content=ft.Text(f"This URL is for {data['owner'].upper()}"
+                            f" that is added on {data['month']} "
+                            f"{data['year']}.\nWould you like to view the "
+                            f"saved GSheet URL?"),
+            actions=[
+                ft.TextButton("Cancel", on_click=lambda a: a.page.close(dlg)),
+                ft.ElevatedButton("Proceed", on_click=proceed_event,
+                                  bgcolor=ft.colors.BLUE_ACCENT,
+                                  color=ft.colors.WHITE)
+            ],
             modal=True, bgcolor=ft.colors.GREY_900)
+
+        gsheet_url.current.value = ""
         e.page.open(dlg)
+        e.page.update()
         return
 
     # Trigger first the recently added event to load recents list
@@ -71,13 +93,20 @@ def add_url_button_event(e):
             data_dir = Path(Reader.BASE_PATH / "downloads/data")
             data_dir.mkdir(parents=True, exist_ok=True)
             owner_formatted = kwargs["owner"].lower().replace(" ", "-")
-            full_name = f"{kwargs["month_num"]}-{owner_formatted}.json"
-            file = data_dir / full_name
+            filename = f"{kwargs["month_num"]}-{owner_formatted}.json"
+            file = data_dir / filename
             with open(file, "w") as outfile:
                 json.dump(kwargs, outfile)
 
             # Save to the gsheetlister RECENTS list
-            gsheetlister_control.add_to_recents(full_name)
+            gsheetlister_control.add_recents(filename)
+            # Save to the gsheetlister URLS_DB dictionary
+            month, year = kwargs["month"].split()
+            month_num = kwargs["month_num"].split("-")[0]
+            gsheetlister_control.add_urlsdb(url=kwargs["url"],
+                                            month=month, year=year,
+                                            month_num=month_num,
+                                            owner=kwargs["owner"])
 
         def progress_callback(**kwargs):
             """ Callback for the progress bar control to update. """

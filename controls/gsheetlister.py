@@ -25,7 +25,7 @@ class GSheetLister(ft.Card):
 
     # Class Variable to track Recents and URLs List
     RECENTS = []
-    URLS = []
+    URLS_DB = {}
 
     def __init__(self):
         """
@@ -74,7 +74,7 @@ class GSheetLister(ft.Card):
                        height=35),
                     ft.Dropdown(options=month_options,
                        ref=self._month_dropdown,
-                       on_change=self._filter_gsheeturl,
+                       on_change=lambda e: self.filter_gsheeturl(),
                        bgcolor=ft.colors.BLUE_GREY_700,
                        border_color=ft.colors.BLUE_GREY_600,
                        width=150, height=35, text_size=15,
@@ -83,7 +83,7 @@ class GSheetLister(ft.Card):
                        value=datetime.now().strftime("%m")),
                     ft.Dropdown(options=year_options,
                        ref=self._year_dropdown,
-                       on_change=self._filter_gsheeturl,
+                       on_change=lambda e: self.filter_gsheeturl(),
                        bgcolor=ft.colors.BLUE_GREY_700,
                        border_color=ft.colors.BLUE_GREY_600,
                        width=90, height=35, text_size=15,
@@ -122,7 +122,7 @@ class GSheetLister(ft.Card):
         # Load the GSheets URL data on initialize depending on current
         # month and year in dropdown. Show the message indicator if
         # not at least 1 gsheet url data is loaded.
-        self._load_gsheeturl_data()
+        self._load_gsheeturl_data(initial_load=True)
         if not len(self._gsheets_url_column.current.controls):
             self._toggle_message_indicator(isloading=False)
 
@@ -134,7 +134,7 @@ class GSheetLister(ft.Card):
             else:
                 self._gsheets_url_column.current.controls.append(gsheeturl)
 
-    def add_to_recents(self, filename):
+    def add_recents(self, filename):
         """
         This method will be used to add a recently saved file name to
         the recents list. It will also make sure to save only latest
@@ -146,6 +146,15 @@ class GSheetLister(ft.Card):
         file = Path(Reader.BASE_PATH / "downloads/data/recents.json")
         with open(file, "w") as outfile:
             json.dump(self.RECENTS, outfile)
+
+    def add_urlsdb(self, *, url, month, month_num, year, owner):
+        """
+        This method adds gsheet url data from currently finished fetch
+        callback method in main. It should be used only for newly added urls.
+        """
+        if url not in self.URLS_DB.keys():
+            self.URLS_DB[url] = {"month": month, "month_num": month_num,
+                                 "year": year, "owner": owner}
 
     def reset(self):
         """ This method clears the list of gsheeturls. """
@@ -186,17 +195,26 @@ class GSheetLister(ft.Card):
             case [False, False]:
                 self._loading_container.current.visible = False
 
-    def _filter_gsheeturl(self, e):
+    def filter_gsheeturl(self, month=None, year=None):
         """
         This callback method will be used by the dropdown to trigger
         loading of new gsheeturl data based on selected month or year.
+        It can also be called outside to update this Gsheetlister control
+        the specified current month and year filters.
         """
+        # If there is a supplied month and year parameter then change
+        # the dropdown values to it
+        if month:
+            self._month_dropdown.current.value = month
+        if year:
+            self._year_dropdown.current.value = year
+
         # Reset first the existing list of gsheeturls
         self.reset()
         # Show the loading indicator and wait for 1 sec
         self._toggle_message_indicator(isloading=True)
         self.disable_filter_controls(True)
-        e.page.update()
+        self.update()
         time.sleep(1)
         # Start loading the gsheeturl data based on dropdown values
         self._load_gsheeturl_data()
@@ -204,9 +222,9 @@ class GSheetLister(ft.Card):
         self._toggle_message_indicator(isloading=False)
         self.disable_filter_controls(False)
         self._recent_button.current.style = Styles.recently_added_style
-        e.page.update()
+        self.update()
 
-    def _load_gsheeturl_data(self):
+    def _load_gsheeturl_data(self, initial_load=False):
         """
         This method will load json from data folder based on the month
         and year dropdown values. It will create a gsheeturl control
@@ -222,20 +240,27 @@ class GSheetLister(ft.Card):
             return  # If data folder does not exist then exit this method
 
         # Create a gsheeturl control if there are existing urls on this month
-        # Also save the urls of all existing data
         for path_name in data_dir.iterdir():
-            with open(path_name, "r") as file:
-                if not path_name.name.startswith("recents"):
-                    self.URLS.append(json.loads(file.read())["url"])
-            # Create a gsheeturl control if it's for this month
             if path_name.name.startswith(f"{month}-{year}"):
                 self._create_gsheeturl_control(path_name.name, diskload=True)
 
+        # If it's initial load then recreate the URLS_DB dictionary
         # Load also the recents.json file into RECENTS list variable
-        recents_file = data_dir / "recents.json"
-        if recents_file.exists():
-            with open(recents_file) as file:
-                self.RECENTS = json.loads(file.read())
+        if initial_load:
+            for path_name in data_dir.iterdir():
+                if not path_name.name.startswith("recents"):
+                    with open(path_name, "r") as file:
+                        url_data = json.loads(file.read())
+                        month_str, year_str = url_data["month"].split()
+                        month_num = url_data["month_num"].split("-")[0]
+                        self.add_urlsdb(url=url_data["url"], month=month_str,
+                                        month_num=month_num, year=year_str,
+                                        owner=url_data["owner"])
+
+            recents_file = data_dir / "recents.json"
+            if recents_file.exists():
+                with open(recents_file) as file:
+                    self.RECENTS = json.loads(file.read())
 
     def show_recently_added(self):
         """
