@@ -69,11 +69,22 @@ class URLManager(ft.Card):
         fetch on the Google Sheet.
         """
         url = self._gsheet_url.current.value
+        dialogbox = None
 
-        # Perform a validation first on the url if it exists already on data
-        if url in self.gsheetlister.URLS_DB.keys():
+        # Perform a validation if the URL given is valid and not empty
+        if not url or not url.startswith("https://docs.google.com/"):
+            message = ("Google Sheet URL should start with a google\n"
+                       "domain, must be a valid URL and not empty.")
+            dialogbox = self._generate_invalid_url_dialogbox(message)
+
+        # Perform a validation to determine if URL already exists
+        elif url in self.gsheetlister.URLS_DB.keys():
             data = self.gsheetlister.URLS_DB[url]
             dialogbox = self._generate_existing_url_dialogbox(data)
+
+        # If dialogbox variable exists then validation fails, we should
+        # show the dialog and exit this method immediately
+        if dialogbox:
             self._gsheet_url.current.value = ""
             e.page.open(dialogbox)
             e.page.update()
@@ -82,60 +93,58 @@ class URLManager(ft.Card):
         # Trigger first the recently added event to load recents list
         self.gsheetlister.show_recently_added()
 
-        # Then proceed adding and creating the gsheet URL
-        if url:
-            # Create a GSheetURL control and append it to the gsheets cont
-            gsheeturl_control = GSheetURL(url)
-            self._gsheet_url.current.value = ""
-            self.gsheetlister.append(gsheeturl_control, first=True)
-            self.gsheetlister.disable_filter_controls(True)
-            self._add_url_button.current.disabled = True
-            self.download_button.current.disabled = True
-            self.progressbar.reset()
+        # Create a GSheetURL control and append it to the gsheets cont
+        gsheeturl_control = GSheetURL(url)
+        self._gsheet_url.current.value = ""
+        self.gsheetlister.append(gsheeturl_control, first=True)
+        self.gsheetlister.disable_filter_controls(True)
+        self._add_url_button.current.disabled = True
+        self.download_button.current.disabled = True
+        self.progressbar.reset()
+        e.page.update()
+
+        def fetch_completed(**kwargs):
+            """ Callback method after the data fetch has been completed. """
+            # DATA[kwargs["owner"]] = kwargs["final_data"]
+            gsheeturl_control.update_display_labels(
+                owner=kwargs["owner"], month=kwargs["month"],
+                timestamp=kwargs["timestamp"], diskload=False)
+            # Update the states of UI Controls
+            self._add_url_button.current.disabled = False
+            self.download_button.current.disabled = False
+            self.gsheetlister.disable_filter_controls(False)
             e.page.update()
 
-            def fetch_completed(**kwargs):
-                """ Callback method after the data fetch has been completed. """
-                # DATA[kwargs["owner"]] = kwargs["final_data"]
-                gsheeturl_control.update_display_labels(
-                    owner=kwargs["owner"], month=kwargs["month"],
-                    timestamp=kwargs["timestamp"], diskload=False)
-                # Update the states of UI Controls
-                self._add_url_button.current.disabled = False
-                self.download_button.current.disabled = False
-                self.gsheetlister.disable_filter_controls(False)
-                e.page.update()
+            # Save the downloaded data to its own JSON file
+            data_dir = Path(Reader.BASE_PATH / "downloads/data")
+            data_dir.mkdir(parents=True, exist_ok=True)
+            owner_formatted = kwargs["owner"].lower().replace(" ", "-")
+            filename = f"{kwargs["month_num"]}-{owner_formatted}.json"
+            file = data_dir / filename
+            with open(file, "w") as outfile:
+                json.dump(kwargs, outfile)
 
-                # Save the downloaded data to its own JSON file
-                data_dir = Path(Reader.BASE_PATH / "downloads/data")
-                data_dir.mkdir(parents=True, exist_ok=True)
-                owner_formatted = kwargs["owner"].lower().replace(" ", "-")
-                filename = f"{kwargs["month_num"]}-{owner_formatted}.json"
-                file = data_dir / filename
-                with open(file, "w") as outfile:
-                    json.dump(kwargs, outfile)
+            # Save to the gsheetlister RECENTS list
+            self.gsheetlister.add_recents(filename)
+            # Save to the gsheetlister URLS_DB dictionary
+            month, year = kwargs["month"].split()
+            month_num = kwargs["month_num"].split("-")[0]
+            self.gsheetlister.add_urlsdb(url=kwargs["url"], month=month,
+                                         year=year, month_num=month_num,
+                                         owner=kwargs["owner"])
 
-                # Save to the gsheetlister RECENTS list
-                self.gsheetlister.add_recents(filename)
-                # Save to the gsheetlister URLS_DB dictionary
-                month, year = kwargs["month"].split()
-                month_num = kwargs["month_num"].split("-")[0]
-                self.gsheetlister.add_urlsdb(url=kwargs["url"], month=month,
-                                             year=year, month_num=month_num,
-                                             owner=kwargs["owner"])
+        def progress_callback(**kwargs):
+            """ Callback for the progress bar control to update. """
+            self.progressbar.update_progress(**kwargs)
 
-            def progress_callback(**kwargs):
-                """ Callback for the progress bar control to update. """
-                self.progressbar.update_progress(**kwargs)
-
-            # Create Reader class to fetch data and pass the required callbacks
-            reader = Reader(url=url)
-            reader.fetch_data(sheet_identifier="*-",
-                              progress=progress_callback,
-                              completed=fetch_completed)
+        # Create Reader class to fetch data and pass the required callbacks
+        reader = Reader(url=url)
+        reader.fetch_data(sheet_identifier="*-",
+                          progress=progress_callback,
+                          completed=fetch_completed)
 
     def _generate_existing_url_dialogbox(self, data):
-        """ Helper method to generate a dialogbox control for existing urls. """
+        """ Helper method to generate an alert dialog for existing urls. """
         def proceed_event(ev):
             # Callback event for the proceed button
             ev.page.close(alert_dialog)
@@ -158,6 +167,21 @@ class URLManager(ft.Card):
                 ft.ElevatedButton("Proceed", on_click=proceed_event,
                                   bgcolor=ft.colors.BLUE_ACCENT,
                                   color=ft.colors.WHITE)],
+            modal=True, bgcolor=ft.colors.GREY_900)
+
+        return alert_dialog
+
+    @staticmethod
+    def _generate_invalid_url_dialogbox(message):
+        """ Helper method to generate an alert dialog for empty urls. """
+        alert_dialog = ft.AlertDialog(
+            title=ft.Row([
+                ft.Icon("warning_rounded", color=ft.colors.RED_ACCENT, size=32),
+                ft.Text("INVALID GSHEET URL", weight=ft.FontWeight.BOLD,
+                        text_align=ft.TextAlign.CENTER, size=20)], spacing=10),
+            content=ft.Text(message),
+            actions=[ft.TextButton("OK",
+                     on_click=lambda a: a.page.close(alert_dialog))],
             modal=True, bgcolor=ft.colors.GREY_900)
 
         return alert_dialog
