@@ -134,6 +134,11 @@ class GSheetLister(ft.Card):
             else:
                 self._gsheets_url_column.current.controls.append(gsheeturl)
 
+    def remove(self, gsheeturl):
+        """ This method removes a specific GSheetURL object to its list. """
+        if gsheeturl:
+            self._gsheets_url_column.current.controls.remove(gsheeturl)
+
     def add_recents(self, filename):
         """
         This method will be used to add a recently saved file name to

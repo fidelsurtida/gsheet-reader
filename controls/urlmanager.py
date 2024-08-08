@@ -10,6 +10,7 @@
 
 import flet as ft
 import json
+import gspread.exceptions as gexceptions
 from pathlib import Path
 from controls.gsheeturl import GSheetURL
 from controls.gsheetlister import GSheetLister
@@ -97,22 +98,17 @@ class URLManager(ft.Card):
         gsheeturl_control = GSheetURL(url)
         self._gsheet_url.current.value = ""
         self.gsheetlister.append(gsheeturl_control, first=True)
-        self.gsheetlister.disable_filter_controls(True)
-        self._add_url_button.current.disabled = True
-        self.download_button.current.disabled = True
+        self.change_state_controls(True)
         self.progressbar.reset()
         e.page.update()
 
         def fetch_completed(**kwargs):
             """ Callback method after the data fetch has been completed. """
-            # DATA[kwargs["owner"]] = kwargs["final_data"]
             gsheeturl_control.update_display_labels(
                 owner=kwargs["owner"], month=kwargs["month"],
                 timestamp=kwargs["timestamp"], diskload=False)
             # Update the states of UI Controls
-            self._add_url_button.current.disabled = False
-            self.download_button.current.disabled = False
-            self.gsheetlister.disable_filter_controls(False)
+            self.change_state_controls(False)
             e.page.update()
 
             # Save the downloaded data to its own JSON file
@@ -138,10 +134,34 @@ class URLManager(ft.Card):
             self.progressbar.update_progress(**kwargs)
 
         # Create Reader class to fetch data and pass the required callbacks
+        # If it returns an exception from gspread then show an appropriate
+        # error dialog box.
         reader = Reader(url=url)
-        reader.fetch_data(sheet_identifier="*-",
-                          progress=progress_callback,
-                          completed=fetch_completed)
+        result = reader.fetch_data(sheet_identifier="*-",
+                                   progress=progress_callback,
+                                   completed=fetch_completed)
+        match result:
+            case gexceptions.SpreadsheetNotFound:
+                message = "Spreadsheet not found on the provided URL."
+                dialogbox = self._generate_invalid_url_dialogbox(message)
+            case gexceptions.APIError:
+                message = "API Key Configuration Not Found."
+                dialogbox = self._generate_invalid_url_dialogbox(message)
+
+        # Remove the gsheeturl control if an exception is found.
+        # Also reset the progress and the filter buttons.
+        if result is not True:
+            e.page.open(dialogbox)
+            self.gsheetlister.remove(gsheeturl_control)
+            self.change_state_controls(False)
+            self.progressbar.reset()
+            e.page.update()
+
+    def change_state_controls(self, flag: bool):
+        """ Helper method to change state of all button controls. """
+        self.gsheetlister.disable_filter_controls(flag)
+        self._add_url_button.current.disabled = flag
+        self.download_button.current.disabled = flag
 
     def _generate_existing_url_dialogbox(self, data):
         """ Helper method to generate an alert dialog for existing urls. """

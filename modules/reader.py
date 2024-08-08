@@ -39,18 +39,32 @@ class Reader:
         """
         self.url = url
         self.timestamp = None
-        self.client = gspread.service_account(
-            filename=Reader.API_KEY,
-            scopes=gspread.auth.READONLY_SCOPES)
+
+        # If API_KEY is not found then specify the client to None
+        # Return the FileNotFound Error on call of fetch_data.
+        try:
+            self.client = gspread.service_account(
+                filename=Reader.API_KEY,
+                scopes=gspread.auth.READONLY_SCOPES)
+        except FileNotFoundError:
+            self.client = None
 
     def fetch_data(self, *, sheet_identifier, progress, completed):
         """
         Fetch all the required data based on the application configuration
         and save it first on the dictionary variable.
         """
+        # Check first if client is valid
+        if not self.client:
+            return gspread.exceptions.APIError
+
         # Get the gsheet from the url
         progress(left="Opening Sheet from URL...", value=0)
-        gsheet = self.client.open_by_url(self.url)
+        try:
+            gsheet = self.client.open_by_url(self.url)
+        except (gspread.exceptions.SpreadsheetNotFound,
+                gspread.exceptions.NoValidUrlKeyFound):
+            return gspread.exceptions.SpreadsheetNotFound
 
         # Get the worksheets with only names starting with identifier
         sheets_names = []
@@ -139,6 +153,7 @@ class Reader:
                   "final_data": final_data}
         progress(center=department_name, right="Download Completed", value=1)
         completed(**kwargs)
+        return True
 
     @staticmethod
     def _sanitize_time(strtime):
