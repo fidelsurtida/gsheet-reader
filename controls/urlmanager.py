@@ -95,7 +95,7 @@ class URLManager(ft.Card):
         self.gsheetlister.show_recently_added()
 
         # Create a GSheetURL control and append it to the gsheets cont
-        gsheeturl_control = GSheetURL(url)
+        gsheeturl_control = GSheetURL(url, self.progressbar)
         self._gsheet_url.current.value = ""
         self.gsheetlister.append(gsheeturl_control, first=True)
         self.change_state_controls(True)

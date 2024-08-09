@@ -8,18 +8,26 @@
 # ---------------------------------------------------
 
 import flet as ft
+import json
+from pathlib import Path
+from modules.reader import Reader
+from controls.progress import Progress
 from modules.styles import Styles
 
 
 class GSheetURL(ft.Container):
 
-    def __init__(self, url):
+    def __init__(self, url, progressbar: Progress):
         """
         Custom Flet Control for displaying an item container of
         added valid GSheet URL. Displays the URL, Timestamp,
         Sheet Owner and action buttons.
         """
         super().__init__()
+
+        # Save the url of the gsheet and the reference to the progressbar
+        self.url = url
+        self.progressbar = progressbar
 
         # Declaration of flet control references
         self._owner_name_text = ft.Ref[ft.Text]()
@@ -30,7 +38,7 @@ class GSheetURL(ft.Container):
         self._completed_icon = ft.Ref[ft.Icon]()
         self._timestamp_text = ft.Ref[ft.Text]()
         self._month_text = ft.Ref[ft.Text]()
-        self._download_button = ft.Ref[ft.IconButton]()
+        self._redownload_button = ft.Ref[ft.IconButton]()
         self._remove_button = ft.Ref[ft.IconButton]()
 
         # Initialize first the container parameters
@@ -88,7 +96,8 @@ class GSheetURL(ft.Container):
                              padding=ft.padding.symmetric(3, 10),
                              margin=ft.margin.only(0, 0, 20, 0)),
                 ft.IconButton(icon="download_for_offline_rounded",
-                              ref=self._download_button,
+                              ref=self._redownload_button,
+                              on_click=self.redownload_gsheet_data,
                               style=Styles.download_url_style,
                               tooltip="DOWNLOAD DATA", disabled=True),
                 ft.IconButton(icon="delete_forever",
@@ -113,7 +122,7 @@ class GSheetURL(ft.Container):
         self._timestamp_text.current.value = f"TIMESTAMP: {timestamp}"
         self._month_text.current.value = month
         self._remove_button.current.disabled = False
-        self._download_button.current.disabled = False
+        self._redownload_button.current.disabled = False
 
         # Update only this control if specified, specify false on app load
         # If autoupdate, change the completed icon to check, else a file
@@ -125,3 +134,46 @@ class GSheetURL(ft.Container):
             self._timestamp_container.current.bgcolor = ft.colors.TEAL_600
         if autoupdate:
             self.update()
+
+    def reset_display_labels(self):
+        """ This method resets the labels to its starting UI gray design. """
+        self._owner_name_text.current.value = "PENDING"
+        self._owner_container.current.bgcolor = ft.colors.GREY_700
+        self._month_container.current.bgcolor = ft.colors.GREY_600
+        self._timestamp_container.current.bgcolor = ft.colors.GREY_600
+        self._progress_ring.current.visible = True
+        self._completed_icon.current.visible = False
+        self._timestamp_text.current.value = "TIMESTAMP: Fetching Details..."
+        self._month_text.current.value = "MONTH: Fetching Details..."
+        self._remove_button.current.disabled = True
+        self._redownload_button.current.disabled = True
+        self.update()
+
+    def redownload_gsheet_data(self, e):
+        """ Redownload the data and save it again as json data file. """
+        self.reset_display_labels()
+
+        def fetch_completed(**kwargs):
+            """ Callback method after the data fetch has been completed. """
+            self.update_display_labels(owner=kwargs["owner"],
+                                       month=kwargs["month"],
+                                       timestamp=kwargs["timestamp"],
+                                       diskload=True)
+
+            # Save the downloaded data to its own JSON file
+            data_dir = Path(Reader.BASE_PATH / "downloads/data")
+            owner_formatted = kwargs["owner"].lower().replace(" ", "-")
+            filename = f"{kwargs["month_num"]}-{owner_formatted}.json"
+            file = data_dir / filename
+            with open(file, "w") as outfile:
+                json.dump(kwargs, outfile)
+
+        def progress_callback(**kwargs):
+            """ Callback for the progress bar control to update. """
+            self.progressbar.update_progress(**kwargs)
+
+        # Create Reader class to fetch data and pass the required callbacks
+        reader = Reader(url=self.url)
+        result = reader.fetch_data(sheet_identifier="*-",
+                                   progress=progress_callback,
+                                   completed=fetch_completed)

@@ -13,8 +13,8 @@ DATA = {}
 download_button = ft.Ref[ft.ElevatedButton]()
 
 # Custom Control References
-gsheetlister_control = GSheetLister()
 progressbar_control = Progress()
+gsheetlister_control = GSheetLister(progress_control=progressbar_control)
 urlmanager_control = URLManager(gsheetlister_control=gsheetlister_control,
                                 progress_control=progressbar_control,
                                 download_btn=download_button)
