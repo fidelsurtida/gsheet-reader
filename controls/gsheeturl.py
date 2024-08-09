@@ -163,7 +163,7 @@ class GSheetURL(ft.Container):
             # Save the downloaded data to its own JSON file
             data_dir = Path(Reader.BASE_PATH / "downloads/data")
             owner_formatted = kwargs["owner"].lower().replace(" ", "-")
-            filename = f"{kwargs["month_num"]}-{owner_formatted}.json"
+            filename = f"{kwargs['month_num']}-{owner_formatted}.json"
             file = data_dir / filename
             with open(file, "w") as outfile:
                 json.dump(kwargs, outfile)
