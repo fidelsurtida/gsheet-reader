@@ -115,7 +115,7 @@ class URLManager(ft.Card):
             data_dir = Path(Reader.BASE_PATH / "downloads/data")
             data_dir.mkdir(parents=True, exist_ok=True)
             owner_formatted = kwargs["owner"].lower().replace(" ", "-")
-            filename = f"{kwargs["month_num"]}-{owner_formatted}.json"
+            filename = f"{kwargs['month_num']}-{owner_formatted}.json"
             file = data_dir / filename
             with open(file, "w") as outfile:
                 json.dump(kwargs, outfile)
