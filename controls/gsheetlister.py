@@ -171,6 +171,11 @@ class GSheetLister(ft.Card):
         self._year_dropdown.current.disabled = flag
         self._recent_button.current.disabled = flag
 
+    def disable_gsheeturl_controls(self, flag):
+        """ This will toggle to disable or not the gsheeturl items buttons. """
+        for gsheeturl in self._gsheets_url_column.current.controls:
+            gsheeturl.disable_buttons(flag)
+
     def _toggle_message_indicator(self, *, isloading=False):
         """
         Toggles the loading based on the given parameters:

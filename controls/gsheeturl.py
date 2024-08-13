@@ -119,8 +119,7 @@ class GSheetURL(ft.Container):
         self._completed_icon.current.visible = True
         self._timestamp_text.current.value = f"TIMESTAMP: {timestamp}"
         self._month_text.current.value = month
-        self._remove_button.current.disabled = False
-        self._redownload_button.current.disabled = False
+        self.disable_buttons(False)
 
         # Update only this control if specified, specify false on app load
         # If autoupdate, change the completed icon to check, else a file
@@ -143,21 +142,37 @@ class GSheetURL(ft.Container):
         self._completed_icon.current.visible = False
         self._timestamp_text.current.value = "TIMESTAMP: Fetching Details..."
         self._month_text.current.value = "MONTH: Fetching Details..."
-        self._remove_button.current.disabled = True
-        self._redownload_button.current.disabled = True
+        self.disable_buttons(True)
         self.update()
+
+    def disable_buttons(self, flag):
+        """ This will toggle the disabled flag of this gsheeturl buttons. """
+        self._remove_button.current.disabled = flag
+        self._redownload_button.current.disabled = flag
 
     def redownload_gsheet_data(self, e):
         """ Redownload the data and save it again as json data file. """
         # Reset the label displays of this gsheeturl control
         self.reset_display_labels()
+        # Get the urlmanager reference and call the change_state_controls
+        # to disable all the buttons on the main app
+        urlmanager = e.page.get_urlmanager()
+        gsheetlister = e.page.get_gsheetlister()
+        download_btn = e.page.get_downloadbtn()
+        gsheetlister.disable_gsheeturl_controls(True)
+        urlmanager.change_state_controls(gsheetlister, download_btn, True)
+        e.page.update()
 
         def fetch_completed(**kwargs):
             """ Callback method after the data fetch has been completed. """
             self.update_display_labels(owner=kwargs["owner"],
                                        month=kwargs["month"],
                                        timestamp=kwargs["timestamp"],
-                                       diskload=True)
+                                       diskload=False)
+            # Update back the buttons to clickable
+            gsheetlister.disable_gsheeturl_controls(False)
+            urlmanager.change_state_controls(gsheetlister, download_btn, False)
+            e.page.update()
 
             # Save the downloaded data to its own JSON file
             data_dir = Path(Reader.BASE_PATH / "downloads/data")
