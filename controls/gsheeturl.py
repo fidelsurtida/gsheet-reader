@@ -11,13 +11,12 @@ import flet as ft
 import json
 from pathlib import Path
 from modules.reader import Reader
-from controls.progress import Progress
 from modules.styles import Styles
 
 
 class GSheetURL(ft.Container):
 
-    def __init__(self, url, progressbar: Progress):
+    def __init__(self, url):
         """
         Custom Flet Control for displaying an item container of
         added valid GSheet URL. Displays the URL, Timestamp,
@@ -25,9 +24,8 @@ class GSheetURL(ft.Container):
         """
         super().__init__()
 
-        # Save the url of the gsheet and the reference to the progressbar
+        # Save the url reference of the gsheet
         self.url = url
-        self.progressbar = progressbar
 
         # Declaration of flet control references
         self._owner_name_text = ft.Ref[ft.Text]()
@@ -151,6 +149,7 @@ class GSheetURL(ft.Container):
 
     def redownload_gsheet_data(self, e):
         """ Redownload the data and save it again as json data file. """
+        # Reset the label displays of this gsheeturl control
         self.reset_display_labels()
 
         def fetch_completed(**kwargs):
@@ -170,10 +169,11 @@ class GSheetURL(ft.Container):
 
         def progress_callback(**kwargs):
             """ Callback for the progress bar control to update. """
-            self.progressbar.update_progress(**kwargs)
+            progressbar_control = e.page.get_progressbar()
+            progressbar_control.update_progress(**kwargs)
 
         # Create Reader class to fetch data and pass the required callbacks
         reader = Reader(url=self.url)
-        result = reader.fetch_data(sheet_identifier="*-",
-                                   progress=progress_callback,
-                                   completed=fetch_completed)
+        reader.fetch_data(sheet_identifier="*-",
+                          progress=progress_callback,
+                          completed=fetch_completed)

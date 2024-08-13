@@ -27,7 +27,7 @@ class GSheetLister(ft.Card):
     RECENTS = []
     URLS_DB = {}
 
-    def __init__(self, progress_control):
+    def __init__(self):
         """
         Custom Flet Control for displaying a list of
         GSheetURL Objects. It contains filter controls
@@ -36,9 +36,6 @@ class GSheetLister(ft.Card):
         clear gsheet list.
         """
         super().__init__()
-
-        # Save the reference of the progressbar control
-        self._progressbar = progress_control
 
         # Declaration of Flet Control References
         self._gsheets_url_column = ft.Ref[ft.Column]()
@@ -300,8 +297,7 @@ class GSheetLister(ft.Card):
         if data_dir.exists():
             with open((data_dir / filename), "r") as file:
                 gsheet_data = json.loads(file.read())
-                gsheet_control = GSheetURL(gsheet_data["url"],
-                                           self._progressbar)
+                gsheet_control = GSheetURL(gsheet_data["url"])
                 self.append(gsheet_control)
                 owner = gsheet_data["owner"]
                 month = gsheet_data["month"]

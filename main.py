@@ -14,10 +14,8 @@ download_button = ft.Ref[ft.ElevatedButton]()
 
 # Custom Control References
 progressbar_control = Progress()
-gsheetlister_control = GSheetLister(progress_control=progressbar_control)
-urlmanager_control = URLManager(gsheetlister_control=gsheetlister_control,
-                                progress_control=progressbar_control,
-                                download_btn=download_button)
+gsheetlister_control = GSheetLister()
+urlmanager_control = URLManager()
 
 
 def download_button_event():
@@ -44,6 +42,12 @@ def main(page: ft.Page):
     page.window.height = 650
     page.window.resizable = False
     page.theme_mode = ft.ThemeMode.DARK
+
+    # Set function call references on page to easily get parent controls
+    page.get_progressbar = lambda: progressbar_control
+    page.get_gsheetlister = lambda: gsheetlister_control
+    page.get_urlmanager = lambda: urlmanager_control
+    page.get_downloadbtn = lambda: download_button
 
     # Download Button and Progress Bar Container
     download_progress_container = ft.Container(

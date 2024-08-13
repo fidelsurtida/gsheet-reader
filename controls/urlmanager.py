@@ -13,16 +13,13 @@ import json
 import gspread.exceptions as gexceptions
 from pathlib import Path
 from controls.gsheeturl import GSheetURL
-from controls.gsheetlister import GSheetLister
-from controls.progress import Progress
 from modules.reader import Reader
 from modules.styles import Styles
 
 
 class URLManager(ft.Card):
 
-    def __init__(self, *, gsheetlister_control: GSheetLister,
-                 progress_control: Progress, download_btn):
+    def __init__(self):
         """
         Custom Flet Control for Managing the added URLs.
         It will show respective error dialog boxes on
@@ -30,12 +27,6 @@ class URLManager(ft.Card):
         gsheeturl controls and add it to gsheetlister.
         """
         super().__init__()
-
-        # Passed Reference of the GSheetLister Custom Control
-        # Download CSV Button and Progress Controls
-        self.gsheetlister = gsheetlister_control
-        self.download_button = download_btn
-        self.progressbar = progress_control
 
         # Declaration of Flet Control References
         self._gsheet_url = ft.Ref[ft.TextField]()
@@ -70,6 +61,8 @@ class URLManager(ft.Card):
         fetch on the Google Sheet.
         """
         url = self._gsheet_url.current.value
+        gsheetlister = e.page.get_gsheetlister()
+        downloadbtn = e.page.get_downloadbtn()
         dialogbox = None
 
         # Perform a validation if the URL given is valid and not empty
@@ -79,9 +72,10 @@ class URLManager(ft.Card):
             dialogbox = self._generate_invalid_url_dialogbox(message)
 
         # Perform a validation to determine if URL already exists
-        elif url in self.gsheetlister.URLS_DB.keys():
-            data = self.gsheetlister.URLS_DB[url]
-            dialogbox = self._generate_existing_url_dialogbox(data)
+        elif url in gsheetlister.URLS_DB.keys():
+            data = gsheetlister.URLS_DB[url]
+            dialogbox = self._generate_existing_url_dialogbox(gsheetlister,
+                                                              data)
 
         # If dialogbox variable exists then validation fails, we should
         # show the dialog and exit this method immediately
@@ -92,14 +86,14 @@ class URLManager(ft.Card):
             return
 
         # Trigger first the recently added event to load recents list
-        self.gsheetlister.show_recently_added()
+        gsheetlister.show_recently_added()
 
         # Create a GSheetURL control and append it to the gsheets cont
-        gsheeturl_control = GSheetURL(url, self.progressbar)
+        gsheeturl_control = GSheetURL(url)
         self._gsheet_url.current.value = ""
-        self.gsheetlister.append(gsheeturl_control, first=True)
-        self.change_state_controls(True)
-        self.progressbar.reset()
+        gsheetlister.append(gsheeturl_control, first=True)
+        self.change_state_controls(gsheetlister, downloadbtn, True)
+        e.page.get_progressbar().reset()
         e.page.update()
 
         def fetch_completed(**kwargs):
@@ -108,7 +102,7 @@ class URLManager(ft.Card):
                 owner=kwargs["owner"], month=kwargs["month"],
                 timestamp=kwargs["timestamp"], diskload=False)
             # Update the states of UI Controls
-            self.change_state_controls(False)
+            self.change_state_controls(gsheetlister, downloadbtn, False)
             e.page.update()
 
             # Save the downloaded data to its own JSON file
@@ -121,17 +115,18 @@ class URLManager(ft.Card):
                 json.dump(kwargs, outfile)
 
             # Save to the gsheetlister RECENTS list
-            self.gsheetlister.add_recents(filename)
+            gsheetlister.add_recents(filename)
             # Save to the gsheetlister URLS_DB dictionary
             month, year = kwargs["month"].split()
             month_num = kwargs["month_num"].split("-")[0]
-            self.gsheetlister.add_urlsdb(url=kwargs["url"], month=month,
-                                         year=year, month_num=month_num,
-                                         owner=kwargs["owner"])
+            gsheetlister.add_urlsdb(url=kwargs["url"], month=month,
+                                    year=year, month_num=month_num,
+                                    owner=kwargs["owner"])
 
         def progress_callback(**kwargs):
             """ Callback for the progress bar control to update. """
-            self.progressbar.update_progress(**kwargs)
+            progressbar_control = e.page.get_progressbar()
+            progressbar_control.update_progress(**kwargs)
 
         # Create Reader class to fetch data and pass the required callbacks
         # If it returns an exception from gspread then show an appropriate
@@ -152,24 +147,25 @@ class URLManager(ft.Card):
         # Also reset the progress and the filter buttons.
         if result is not True:
             e.page.open(dialogbox)
-            self.gsheetlister.remove(gsheeturl_control)
-            self.change_state_controls(False)
-            self.progressbar.reset()
+            gsheetlister.remove(gsheeturl_control)
+            self.change_state_controls(gsheetlister, downloadbtn, False)
+            e.page.get_progressbar().reset()
             e.page.update()
 
-    def change_state_controls(self, flag: bool):
+    def change_state_controls(self, gsheetlister, downloadbtn, flag: bool):
         """ Helper method to change state of all button controls. """
-        self.gsheetlister.disable_filter_controls(flag)
+        gsheetlister.disable_filter_controls(flag)
+        downloadbtn.current.disabled = flag
         self._add_url_button.current.disabled = flag
-        self.download_button.current.disabled = flag
 
-    def _generate_existing_url_dialogbox(self, data):
+    @staticmethod
+    def _generate_existing_url_dialogbox(gsheetlister, data):
         """ Helper method to generate an alert dialog for existing urls. """
         def proceed_event(ev):
             # Callback event for the proceed button
             ev.page.close(alert_dialog)
-            self.gsheetlister.filter_gsheeturl(month=data["month_num"],
-                                               year=data["year"])
+            gsheetlister.filter_gsheeturl(month=data["month_num"],
+                                          year=data["year"])
 
         alert_dialog = ft.AlertDialog(
             title=ft.Row([
