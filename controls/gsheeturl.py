@@ -97,9 +97,10 @@ class GSheetURL(ft.Container):
                               ref=self._redownload_button,
                               on_click=self.redownload_gsheet_data,
                               style=Styles.download_url_style,
-                              tooltip="DOWNLOAD DATA", disabled=True),
+                              tooltip="UPDATE DATA", disabled=True),
                 ft.IconButton(icon="delete_forever",
                               ref=self._remove_button,
+                              on_click=self.remove_gsheet_data,
                               style=Styles.remove_url_style,
                               tooltip="REMOVE URL", disabled=True)
             ], spacing=1)
@@ -192,3 +193,53 @@ class GSheetURL(ft.Container):
         reader.fetch_data(sheet_identifier="*-",
                           progress=progress_callback,
                           completed=fetch_completed)
+
+    def remove_gsheet_data(self, e):
+        """ Remove the saved gsheeturl from data folder and recents list. """
+        gsheetlister = e.page.get_gsheetlister()
+        url_data = gsheetlister.URLS_DB[self.url]
+
+        def confirm_delete(ev):
+            """ Callback function for confirming the delete in bottom sheet. """
+            # Delete the file on the data folder
+            data_dir = Path(Reader.BASE_PATH / "downloads/data")
+            file = data_dir / url_data["filename"]
+            if file.exists():
+                file.unlink()
+            # Remove from the recents list and resave the recents.json file
+            gsheetlister.remove_recents(url_data["filename"])
+            # Remove also the loaded data from URLSDB
+            gsheetlister.remove_urlsdb(self.url)
+            # Finally remove the gsheeturl control
+            gsheetlister.remove(self)
+            ev.page.close(bottom_sheet)
+            ev.page.update()
+
+        # Create the bottom sheet control UI for confirmation of delete
+        bottom_sheet = ft.BottomSheet(content=ft.Container(
+            padding=25,
+            content=ft.Column([
+                ft.Row([
+                    ft.Icon("warning_rounded", size=40,
+                            color=ft.colors.RED_900),
+                    ft.Text(f"Are you sure to remove GSHEETURL for "
+                            f"{url_data['owner']} - {url_data['month']} "
+                            f"{url_data['year']}?",
+                            weight=ft.FontWeight.BOLD)
+                ]),
+                ft.Row([
+                    ft.TextButton(content=ft.Text("CANCEL",
+                                  color=ft.colors.WHITE),
+                                  on_click=lambda a:
+                                  a.page.close(bottom_sheet)),
+                    ft.ElevatedButton("CONFIRM DELETE",
+                                      on_click=confirm_delete,
+                                      icon="delete_forever",
+                                      icon_color=ft.colors.RED_200,
+                                      bgcolor=ft.colors.RED_ACCENT_700,
+                                      color=ft.colors.WHITE)
+                ], alignment=ft.MainAxisAlignment.END, spacing=20)
+            ], tight=True)
+        ), bgcolor=ft.colors.RED_400)
+
+        e.page.open(bottom_sheet)

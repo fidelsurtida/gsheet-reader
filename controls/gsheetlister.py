@@ -152,14 +152,32 @@ class GSheetLister(ft.Card):
         with open(file, "w") as outfile:
             json.dump(self.RECENTS, outfile)
 
-    def add_urlsdb(self, *, url, month, month_num, year, owner):
+    def remove_recents(self, filename):
+        """
+        This method will be used to remove a filename to the recents
+        list. It will also update the recents.json file.
+        """
+        if filename in self.RECENTS:
+            self.RECENTS.remove(filename)
+            # Save the current RECENTS into a JSON file
+            file = Path(Reader.BASE_PATH / "downloads/data/recents.json")
+            with open(file, "w") as outfile:
+                json.dump(self.RECENTS, outfile)
+
+    def add_urlsdb(self, *, url, month, month_num, year, owner, filename):
         """
         This method adds gsheet url data from currently finished fetch
         callback method in main. It should be used only for newly added urls.
         """
         if url not in self.URLS_DB.keys():
             self.URLS_DB[url] = {"month": month, "month_num": month_num,
-                                 "year": year, "owner": owner}
+                                 "year": year, "owner": owner,
+                                 "filename": filename}
+
+    def remove_urlsdb(self, url):
+        """ Remove the specified url from the URLSDB variable. """
+        if url in self.URLS_DB.keys():
+            self.URLS_DB.pop(url)
 
     def reset(self):
         """ This method clears the list of gsheeturls. """
@@ -265,7 +283,8 @@ class GSheetLister(ft.Card):
                         month_num = url_data["month_num"].split("-")[0]
                         self.add_urlsdb(url=url_data["url"], month=month_str,
                                         month_num=month_num, year=year_str,
-                                        owner=url_data["owner"])
+                                        owner=url_data["owner"],
+                                        filename=path_name.name)
 
             recents_file = data_dir / "recents.json"
             if recents_file.exists():

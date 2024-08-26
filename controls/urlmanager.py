@@ -123,7 +123,8 @@ class URLManager(ft.Card):
             month_num = kwargs["month_num"].split("-")[0]
             gsheetlister.add_urlsdb(url=kwargs["url"], month=month,
                                     year=year, month_num=month_num,
-                                    owner=kwargs["owner"])
+                                    owner=kwargs["owner"],
+                                    filename=filename)
 
         def progress_callback(**kwargs):
             """ Callback for the progress bar control to update. """
