@@ -24,6 +24,8 @@ from gspread.utils import Dimension, DateTimeOption, ValueRenderOption
 
 # "https://docs.google.com/spreadsheets/d/1xDew94vfttSPIZ39nA7G7V9kGs_76BI6g-URrsKHP_A/"
 # "https://docs.google.com/spreadsheets/d/126fd7j8aLGGegctt45V4r10qE6EJ2LR8XffcZU7NcMc/"
+# "https://docs.google.com/spreadsheets/d/1nur0MNyZ9Zyx2nYtAN_9Xagiqt6bdBIDbLG-_yRmXok/"
+# "https://docs.google.com/spreadsheets/d/1tN14S_VZionNZ-Qky-qJffK8zxVjKhZpt6JS0sqfEb8/"
 class Reader:
 
     # Configuration Path

@@ -92,6 +92,7 @@ class URLManager(ft.Card):
         gsheeturl_control = GSheetURL(url)
         self._gsheet_url.current.value = ""
         gsheetlister.append(gsheeturl_control, first=True)
+        gsheetlister.disable_gsheeturl_controls(True)
         self.change_state_controls(gsheetlister, downloadbtn, True)
         e.page.get_progressbar().reset()
         e.page.update()
@@ -103,6 +104,7 @@ class URLManager(ft.Card):
                 timestamp=kwargs["timestamp"], diskload=False)
             # Update the states of UI Controls
             self.change_state_controls(gsheetlister, downloadbtn, False)
+            gsheetlister.disable_gsheeturl_controls(False)
             e.page.update()
 
             # Save the downloaded data to its own JSON file
