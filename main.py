@@ -6,9 +6,6 @@ from modules.reader import Reader
 from modules.styles import Styles
 
 
-# GLOBAL DATA VARIABLE for creating CSV
-DATA = {}
-
 # Flet Control References
 download_button = ft.Ref[ft.ElevatedButton]()
 
@@ -18,17 +15,23 @@ gsheetlister_control = GSheetLister()
 urlmanager_control = URLManager()
 
 
-def download_button_event():
+def download_button_event(e):
     """
     This button event will create a csv report based
-    on the saved url data json files.
+    on the saved json files.
     """
-    if DATA:
-        download_button.current.disabled = True
-        download_button.current.update()
-        Reader.generate_csv_report(DATA)
-        download_button.current.disabled = False
-        download_button.current.update()
+    gsheetlister_control.disable_gsheeturl_controls(True)
+    urlmanager_control.change_state_controls(gsheetlister_control,
+                                             download_button, True)
+    e.page.update()
+
+    # Generate the CSV Report
+    Reader.generate_csv_report(progressbar_control)
+
+    gsheetlister_control.disable_gsheeturl_controls(False)
+    urlmanager_control.change_state_controls(gsheetlister_control,
+                                             download_button, False)
+    e.page.update()
 
 
 # --------------------------------

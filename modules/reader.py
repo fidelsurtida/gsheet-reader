@@ -13,6 +13,7 @@
 
 import gspread
 import csv
+import json
 import time
 import os
 import platform
@@ -167,26 +168,48 @@ class Reader:
         return ""
 
     @staticmethod
-    def generate_csv_report(data):
+    def generate_csv_report(progress):
         """
         Standalone method to generate a csv report based
-        on the passed DATA library.
+        on all the saved JSON from data folder
         """
         # Create first the downloads folder
         path = Reader.BASE_PATH / "downloads"
+        data_path = path / "data"
         path.mkdir(exist_ok=True)
 
         # Header column names for the CSV
         headers = ["Department", "Account", "Name", "Date",
                    "Task Done", "Processed", "START", "END"]
 
+        # Reset and prime the progress bar
+        progress.reset()
+        progress.update_progress(left="Generating CSV Report...", value=0)
+        time.sleep(2)
+
         # Create the csv file
         filepath = path / "dataexport.csv"
         with open(filepath, 'w') as csvfile:
             csvwriter = csv.writer(csvfile)
             csvwriter.writerow(headers)
-            for rows in data.values():
-                csvwriter.writerows(rows)
+            # Iterate the data folder and get the final_data key from
+            # each JSON file, also skip the recents.json
+            total_files = len(list(data_path.iterdir())) - 1
+            progress_count = 0
+            per_file_prog = 0.9 / total_files
+            for path_name in data_path.iterdir():
+                if not path_name.name.startswith("recents"):
+                    with open(path_name, "r") as file:
+                        final_rows = json.loads(file.read())["final_data"]
+                        csvwriter.writerows(final_rows)
+                        progress_count = progress_count + per_file_prog
+                        progress.update_progress(
+                            left="Writing",
+                            center=path_name.name,
+                            right="CSV Data...", value=progress_count)
+                        time.sleep(1)
+            progress.update_progress(center="CSV REPORT",
+                                     right="Generation Completed", value=1)
 
         # Determine first the OS then call the correct
         # command to open the downloads folder

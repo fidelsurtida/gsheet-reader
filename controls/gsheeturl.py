@@ -162,6 +162,7 @@ class GSheetURL(ft.Container):
         download_btn = e.page.get_downloadbtn()
         gsheetlister.disable_gsheeturl_controls(True)
         urlmanager.change_state_controls(gsheetlister, download_btn, True)
+        e.page.get_progressbar().reset()
         e.page.update()
 
         def fetch_completed(**kwargs):
