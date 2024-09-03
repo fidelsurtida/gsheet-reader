@@ -72,6 +72,8 @@ class Reader:
         except (gspread.exceptions.SpreadsheetNotFound,
                 gspread.exceptions.NoValidUrlKeyFound):
             return gspread.exceptions.SpreadsheetNotFound
+        except PermissionError:
+            return gspread.exceptions.GSpreadException
 
         # Get the worksheets with only names starting with identifier
         sheets_names = []

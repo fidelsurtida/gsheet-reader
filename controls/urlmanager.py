@@ -145,6 +145,9 @@ class URLManager(ft.Card):
                 message = "Spreadsheet not found on the provided URL."
             case gexceptions.APIError:
                 message = "API Key Configuration Not Found."
+            case gexceptions.GSpreadException:
+                message = ("GSheet URL is not shared to the configured\n"
+                           "email of GSheet Reader API key.")
             case _:
                 reset_prog = False
                 message = ("Data Reading Failed. Details of the Error: \n"
