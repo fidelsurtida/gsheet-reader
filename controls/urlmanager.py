@@ -7,7 +7,6 @@
 # This also fetches the gsheet data on a valid
 # URL input and converts them to gsheeturl controls.
 # ---------------------------------------------------
-from cgitb import reset
 
 import flet as ft
 import json
@@ -63,7 +62,6 @@ class URLManager(ft.Card):
         """
         url = self._gsheet_url.current.value
         gsheetlister = e.page.get_gsheetlister()
-        downloadbtn = e.page.get_downloadbtn()
         dialogbox = None
 
         # Perform a validation if the URL given is valid and not empty
@@ -93,8 +91,7 @@ class URLManager(ft.Card):
         gsheeturl_control = GSheetURL(url)
         self._gsheet_url.current.value = ""
         gsheetlister.append(gsheeturl_control, first=True)
-        gsheetlister.disable_gsheeturl_controls(True)
-        self.change_state_controls(gsheetlister, downloadbtn, True)
+        e.page.disable_all_buttons(True)
         e.page.get_progressbar().reset()
         e.page.update()
 
@@ -104,8 +101,7 @@ class URLManager(ft.Card):
                 owner=kwargs["owner"], month=kwargs["month"],
                 timestamp=kwargs["timestamp"], diskload=False)
             # Update the states of UI Controls
-            self.change_state_controls(gsheetlister, downloadbtn, False)
-            gsheetlister.disable_gsheeturl_controls(False)
+            e.page.disable_all_buttons(False)
             e.page.update()
 
             # Save the downloaded data to its own JSON file
@@ -159,16 +155,13 @@ class URLManager(ft.Card):
             dialogbox = self._generate_invalid_url_dialogbox(message)
             e.page.open(dialogbox)
             gsheetlister.remove(gsheeturl_control)
-            gsheetlister.disable_gsheeturl_controls(False)
-            self.change_state_controls(gsheetlister, downloadbtn, False)
+            e.page.disable_all_buttons(False)
             if reset_prog:
                 e.page.get_progressbar().reset()
             e.page.update()
 
-    def change_state_controls(self, gsheetlister, downloadbtn, flag: bool):
-        """ Helper method to change state of all button controls. """
-        gsheetlister.disable_filter_controls(flag)
-        downloadbtn.current.disabled = flag
+    def disable_buttons(self, flag: bool):
+        """ Helper method to change state this control buttons. """
         self._add_url_button.current.disabled = flag
 
     @staticmethod

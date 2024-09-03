@@ -155,13 +155,8 @@ class GSheetURL(ft.Container):
         """ Redownload the data and save it again as json data file. """
         # Reset the label displays of this gsheeturl control
         self.reset_display_labels()
-        # Get the urlmanager reference and call the change_state_controls
-        # to disable all the buttons on the main app
-        urlmanager = e.page.get_urlmanager()
-        gsheetlister = e.page.get_gsheetlister()
-        download_btn = e.page.get_downloadbtn()
-        gsheetlister.disable_gsheeturl_controls(True)
-        urlmanager.change_state_controls(gsheetlister, download_btn, True)
+        # Get the page reference and call the helper method to disable buttons.
+        e.page.disable_all_buttons(True)
         e.page.get_progressbar().reset()
         e.page.update()
 
@@ -172,8 +167,7 @@ class GSheetURL(ft.Container):
                                        timestamp=kwargs["timestamp"],
                                        diskload=False)
             # Update back the buttons to clickable
-            gsheetlister.disable_gsheeturl_controls(False)
-            urlmanager.change_state_controls(gsheetlister, download_btn, False)
+            e.page.disable_all_buttons(False)
             e.page.update()
 
             # Save the downloaded data to its own JSON file
@@ -226,7 +220,8 @@ class GSheetURL(ft.Container):
                     ft.Text(f"Are you sure to remove GSHEETURL for "
                             f"{url_data['owner']} - {url_data['month']} "
                             f"{url_data['year']}?",
-                            weight=ft.FontWeight.BOLD)
+                            weight=ft.FontWeight.BOLD,
+                            color=ft.colors.WHITE)
                 ]),
                 ft.Row([
                     ft.TextButton(content=ft.Text("CANCEL",
@@ -241,6 +236,6 @@ class GSheetURL(ft.Container):
                                       color=ft.colors.WHITE)
                 ], alignment=ft.MainAxisAlignment.END, spacing=20)
             ], tight=True)
-        ), bgcolor=ft.colors.RED_400)
+        ), bgcolor=ft.colors.RED_ACCENT)
 
         e.page.open(bottom_sheet)

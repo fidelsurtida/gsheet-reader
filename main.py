@@ -20,18 +20,22 @@ def download_button_event(e):
     This button event will create a csv report based
     on the saved json files.
     """
-    gsheetlister_control.disable_gsheeturl_controls(True)
-    urlmanager_control.change_state_controls(gsheetlister_control,
-                                             download_button, True)
+    # Disable the current visible buttons
+    disable_all_buttons(True)
     e.page.update()
-
     # Generate the CSV Report
     Reader.generate_csv_report(progressbar_control)
-
-    gsheetlister_control.disable_gsheeturl_controls(False)
-    urlmanager_control.change_state_controls(gsheetlister_control,
-                                             download_button, False)
+    # Enable again all the visible buttons
+    disable_all_buttons(False)
     e.page.update()
+
+
+def disable_all_buttons(flag: bool):
+    """ Helper method of the main window to enable/disable all buttons. """
+    urlmanager_control.disable_buttons(flag)
+    gsheetlister_control.disable_filter_controls(flag)
+    gsheetlister_control.disable_gsheeturl_controls(flag)
+    download_button.current.disabled = flag
 
 
 # --------------------------------
@@ -50,7 +54,7 @@ def main(page: ft.Page):
     page.get_progressbar = lambda: progressbar_control
     page.get_gsheetlister = lambda: gsheetlister_control
     page.get_urlmanager = lambda: urlmanager_control
-    page.get_downloadbtn = lambda: download_button
+    page.disable_all_buttons = disable_all_buttons
 
     # Download Button and Progress Bar Container
     download_progress_container = ft.Container(
