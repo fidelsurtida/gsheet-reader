@@ -22,11 +22,15 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from gspread.utils import Dimension, DateTimeOption, ValueRenderOption
 
-
+# WORKING SHEETS URL
 # "https://docs.google.com/spreadsheets/d/1xDew94vfttSPIZ39nA7G7V9kGs_76BI6g-URrsKHP_A/"
 # "https://docs.google.com/spreadsheets/d/126fd7j8aLGGegctt45V4r10qE6EJ2LR8XffcZU7NcMc/"
 # "https://docs.google.com/spreadsheets/d/1nur0MNyZ9Zyx2nYtAN_9Xagiqt6bdBIDbLG-_yRmXok/"
 # "https://docs.google.com/spreadsheets/d/1tN14S_VZionNZ-Qky-qJffK8zxVjKhZpt6JS0sqfEb8/"
+# WITH ERROR SHEETS URL
+# "https://docs.google.com/spreadsheets/d/1Rajey786y2rOpDzsclhnreexd4AMUdOjA6m68343S9Y/"
+# "https://docs.google.com/spreadsheets/d/1i2HylLwYeRIem-9pL8MqpW6S7W2MwHpNf-FYUBVgZNY/"
+
 class Reader:
 
     # Configuration Path
@@ -123,16 +127,22 @@ class Reader:
             end_times = data[4][5:]
 
             # Format the times to datetime object
-            for i, strdate in enumerate(date_times):
-                if strdate:
-                    date = datetime(1899, 12, 30) + timedelta(days=int(strdate))
-                    date_times[i] = str(date.date())
-                    month_sheet = date.strftime("%B %Y")
-                    month_sheet_numeric = date.strftime("%m-%Y")
-            for i, stime in enumerate(start_times):
-                start_times[i] = self._sanitize_time(stime)
-            for i, etime in enumerate(end_times):
-                end_times[i] = self._sanitize_time(etime)
+            try:
+                for i, strdate in enumerate(date_times):
+                    if strdate:
+                        date = (datetime(1899, 12, 30) +
+                                timedelta(days=int(strdate)))
+                        date_times[i] = str(date.date())
+                        month_sheet = date.strftime("%B %Y")
+                        month_sheet_numeric = date.strftime("%m-%Y")
+                for i, stime in enumerate(start_times):
+                    start_times[i] = self._sanitize_time(stime)
+                for i, etime in enumerate(end_times):
+                    end_times[i] = self._sanitize_time(etime)
+            except Exception as e:
+                progress(left="Download Failed", center=sheet_owner,
+                         right="Sheet Data...", value=cur_prog)
+                return e
 
             columns = [date_times, task_names, num_processed,
                        start_times, end_times]

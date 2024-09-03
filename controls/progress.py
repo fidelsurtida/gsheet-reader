@@ -64,6 +64,13 @@ class Progress(ft.Column):
             self._message_text_center.current.value = center.upper()
         self._progress_bar.current.value = value
 
+        # Change to red style when detected "Download Failed" text on left
+        if left == "Download Failed":
+            self._message_text_left.current.color = ft.colors.RED_ACCENT
+            self._message_text_right.current.color = ft.colors.RED_ACCENT
+            self._center_container.current.bgcolor = ft.colors.RED_ACCENT_700
+            self._progress_bar.current.color = ft.colors.RED_ACCENT
+
         # Change the appearance of the message if progress bar is finished
         if value == 1:
             self._message_text_left.current.color = ft.colors.GREEN_400
@@ -83,5 +90,6 @@ class Progress(ft.Column):
         self._center_container.current.bgcolor = ft.colors.BLUE_800
         self._message_text_left.current.color = ft.colors.WHITE
         self._message_text_right.current.color = ft.colors.WHITE
+        self._progress_bar.current.color = ft.colors.GREEN_400
         self._progress_bar.current.value = 0
         self.update()

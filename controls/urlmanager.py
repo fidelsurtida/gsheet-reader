@@ -7,6 +7,7 @@
 # This also fetches the gsheet data on a valid
 # URL input and converts them to gsheeturl controls.
 # ---------------------------------------------------
+from cgitb import reset
 
 import flet as ft
 import json
@@ -138,21 +139,27 @@ class URLManager(ft.Card):
         result = reader.fetch_data(sheet_identifier="*-",
                                    progress=progress_callback,
                                    completed=fetch_completed)
+        reset_prog = True
         match result:
             case gexceptions.SpreadsheetNotFound:
                 message = "Spreadsheet not found on the provided URL."
-                dialogbox = self._generate_invalid_url_dialogbox(message)
             case gexceptions.APIError:
                 message = "API Key Configuration Not Found."
-                dialogbox = self._generate_invalid_url_dialogbox(message)
+            case _:
+                reset_prog = False
+                message = ("Data Reading Failed. Details of the Error: \n"
+                           f"{str(result)}")
 
         # Remove the gsheeturl control if an exception is found.
         # Also reset the progress and the filter buttons.
         if result is not True:
+            dialogbox = self._generate_invalid_url_dialogbox(message)
             e.page.open(dialogbox)
             gsheetlister.remove(gsheeturl_control)
+            gsheetlister.disable_gsheeturl_controls(False)
             self.change_state_controls(gsheetlister, downloadbtn, False)
-            e.page.get_progressbar().reset()
+            if reset_prog:
+                e.page.get_progressbar().reset()
             e.page.update()
 
     def change_state_controls(self, gsheetlister, downloadbtn, flag: bool):
