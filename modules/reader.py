@@ -127,6 +127,7 @@ class Reader:
             num_processed = data[2][5:]
             start_times = data[3][5:]
             end_times = data[4][5:]
+            durations = []
 
             # Format the times to datetime object
             try:
@@ -141,15 +142,25 @@ class Reader:
                     start_times[i] = self._sanitize_time(stime)
                 for i, etime in enumerate(end_times):
                     end_times[i] = self._sanitize_time(etime)
+                # Get the duration of difference in end times and start times
+                for st, et in zip(start_times, end_times):
+                    if st and et:
+                        start_time = datetime.strptime(st, "%I:%M %p")
+                        end_time = datetime.strptime(et, "%I:%M %p")
+                        duration_str = str(end_time - start_time)
+                        durations.append(duration_str.split("day, ")[-1])
+                    else:
+                        durations.append("")
+
             except Exception as e:
                 progress(left="Download Failed", center=sheet_owner,
                          right="Sheet Data...", value=cur_prog)
                 return e
 
             columns = [date_times, task_names, num_processed,
-                       start_times, end_times]
+                       start_times, end_times, durations]
 
-            for index in range(5, len(date_times)):
+            for index in range(6, len(date_times)):
                 result = [department_name, account_name, sheet_owner]
                 for column in columns:
                     try:
@@ -192,7 +203,7 @@ class Reader:
 
         # Header column names for the CSV
         headers = ["Department", "Account", "Name", "Date",
-                   "Task Done", "Processed", "START", "END"]
+                   "Task Done", "Processed", "START", "END", "DURATION"]
 
         # Reset and prime the progress bar
         progress.reset()
@@ -201,7 +212,7 @@ class Reader:
 
         # Create the csv file
         filepath = path / "dataexport.csv"
-        with open(filepath, 'w') as csvfile:
+        with open(filepath, 'w', newline='') as csvfile:
             csvwriter = csv.writer(csvfile)
             csvwriter.writerow(headers)
             # Iterate the data folder and get the final_data key from
