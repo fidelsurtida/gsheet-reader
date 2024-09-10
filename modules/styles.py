@@ -8,6 +8,7 @@
 # ---------------------------------------------------
 
 import flet as ft
+from flet_core.types import ControlState as CState
 
 
 class Styles:
@@ -18,16 +19,16 @@ class Styles:
     # -------------------
     download_url_style = ft.ButtonStyle(
         color={
-            ft.ControlState.DEFAULT: ft.colors.GREY_400,
-            ft.ControlState.HOVERED: ft.colors.GREEN_500,
-            ft.ControlState.DISABLED: ft.colors.GREY_700
+            CState.DEFAULT: ft.colors.GREY_400,
+            CState.HOVERED: ft.colors.GREEN_500,
+            CState.DISABLED: ft.colors.GREY_700
         }
     )
     remove_url_style = ft.ButtonStyle(
         color={
-            ft.ControlState.DEFAULT: ft.colors.GREY_400,
-            ft.ControlState.HOVERED: ft.colors.RED_400,
-            ft.ControlState.DISABLED: ft.colors.GREY_700
+            CState.DEFAULT: ft.colors.GREY_400,
+            CState.HOVERED: ft.colors.RED_400,
+            CState.DISABLED: ft.colors.GREY_700
         }
     )
 
@@ -37,60 +38,60 @@ class Styles:
     add_url_style = ft.ButtonStyle(
         shape=ft.RoundedRectangleBorder(radius=8),
         overlay_color={
-            ft.ControlState.PRESSED: ft.colors.GREEN_900
+            CState.PRESSED: ft.colors.GREEN_900
         },
         color={
-            ft.ControlState.DEFAULT: ft.colors.GREEN_900,
-            ft.ControlState.HOVERED: ft.colors.GREEN_100,
-            ft.ControlState.DISABLED: ft.colors.GREY_900
+            CState.DEFAULT: ft.colors.GREEN_900,
+            CState.HOVERED: ft.colors.GREEN_100,
+            CState.DISABLED: ft.colors.GREY_900
         },
         bgcolor={
-            ft.ControlState.HOVERED: ft.colors.GREEN_300,
-            ft.ControlState.DEFAULT: ft.colors.GREEN_500,
-            ft.ControlState.DISABLED: ft.colors.GREY_800
+            CState.HOVERED: ft.colors.GREEN_300,
+            CState.DEFAULT: ft.colors.GREEN_500,
+            CState.DISABLED: ft.colors.GREY_800
         }
     )
     settings_style = ft.ButtonStyle(
         shape=ft.RoundedRectangleBorder(radius=8),
         padding=ft.padding.symmetric(5, 8),
         bgcolor={
-            ft.ControlState.HOVERED: ft.colors.BLUE_GREY_900,
-            ft.ControlState.DEFAULT: ft.colors.BLACK12
+            CState.HOVERED: ft.colors.BLUE_GREY_900,
+            CState.DEFAULT: ft.colors.BLACK12
         }
     )
     recently_added_style = ft.ButtonStyle(
         shape=ft.RoundedRectangleBorder(radius=5),
         color=ft.colors.WHITE38,
         bgcolor={
-            ft.ControlState.DEFAULT: ft.colors.BLACK12
+            CState.DEFAULT: ft.colors.BLACK12
         },
         side={
-            ft.ControlState.DEFAULT: ft.BorderSide(1, ft.colors.BLACK26)
+            CState.DEFAULT: ft.BorderSide(1, ft.colors.BLACK26)
         }
     )
     recently_active_style = ft.ButtonStyle(
         shape=ft.RoundedRectangleBorder(radius=5),
         color=ft.colors.DEEP_ORANGE_800,
         bgcolor={
-            ft.ControlState.DEFAULT: ft.colors.ORANGE_ACCENT
+            CState.DEFAULT: ft.colors.ORANGE_ACCENT
         },
         side={
-            ft.ControlState.DEFAULT: ft.BorderSide(3, ft.colors.ORANGE_700)
+            CState.DEFAULT: ft.BorderSide(3, ft.colors.ORANGE_700)
         }
     )
     download_data_style = ft.ButtonStyle(
         shape=ft.RoundedRectangleBorder(radius=10),
         overlay_color={
-            ft.ControlState.PRESSED: ft.colors.BLUE_800
+            CState.PRESSED: ft.colors.BLUE_800
         },
         color={
-            ft.ControlState.DEFAULT: ft.colors.BLUE_900,
-            ft.ControlState.HOVERED: ft.colors.BLUE_100,
-            ft.ControlState.DISABLED: ft.colors.GREY_900
+            CState.DEFAULT: ft.colors.BLUE_900,
+            CState.HOVERED: ft.colors.BLUE_100,
+            CState.DISABLED: ft.colors.GREY_900
         },
         bgcolor={
-            ft.ControlState.HOVERED: ft.colors.BLUE_400,
-            ft.ControlState.DEFAULT: ft.colors.BLUE_500,
-            ft.ControlState.DISABLED: ft.colors.GREY_800
+            CState.HOVERED: ft.colors.BLUE_400,
+            CState.DEFAULT: ft.colors.BLUE_500,
+            CState.DISABLED: ft.colors.GREY_800
         }
     )
