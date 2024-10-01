@@ -1,5 +1,6 @@
 import flet as ft
 from controls.urlmanager import URLManager
+from controls.settingsmanager import SettingsManager
 from controls.gsheetlister import GSheetLister
 from controls.progress import Progress
 from modules.reader import Reader
@@ -44,7 +45,6 @@ def disable_all_buttons(flag: bool):
 def main(page: ft.Page):
 
     # Set the Window Properties
-    page.title = "GSheet Reader"
     page.window.width = 900
     page.window.height = 650
     page.window.resizable = False
@@ -70,10 +70,29 @@ def main(page: ft.Page):
             ], spacing=30
         ), height=70, padding=10)
 
-    # Add the main elements of the application
-    page.add(urlmanager_control)
-    page.add(gsheetlister_control)
-    page.add(download_progress_container)
+    # Add the root page dashboard to the views
+    dashboard_view = ft.View("/dashboard", [
+        urlmanager_control,
+        gsheetlister_control,
+        download_progress_container
+    ])
+    page.views.clear()
+    page.views.append(dashboard_view)
+
+    # Create a route change event to switch between dashboard and settings view
+    def route_change(e):
+        if e.route == "/dashboard":
+            page.views.clear()
+            page.views.append(dashboard_view)
+            page.title = "GSheet Reader - Dashboard"
+        elif e.route == "/settings":
+            page.title = "GSheet Reader - Settings"
+            page.views.append(ft.View("/settings", [SettingsManager()]))
+        page.update()
+
+    # Set the route change event and default go to the dashboard page
+    page.on_route_change = route_change
+    page.go("/dashboard")
 
 
 # Run the main Flet Window App

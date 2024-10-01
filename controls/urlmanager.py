@@ -51,8 +51,14 @@ class URLManager(ft.Card):
                                   size=30, color=ft.colors.WHITE60),
                                   width=55, height=50,
                                   style=Styles.settings_style,
+                                  on_click=self._settings_button_event,
                                   tooltip="DATA SETTINGS ")
             ], spacing=15), padding=20)
+
+    @staticmethod
+    def _settings_button_event(e):
+        """ Changes the view into /settings route to show settings. """
+        e.page.go("/settings")
 
     def _add_url_button_event(self, e):
         """
