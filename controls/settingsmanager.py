@@ -10,6 +10,8 @@
 # ---------------------------------------------------
 
 import flet as ft
+import json
+from modules.reader import Reader
 
 
 class SettingsManager(ft.Row):
@@ -82,7 +84,8 @@ class SettingsManager(ft.Row):
                         ft.ElevatedButton("SAVE SETTINGS",
                                           icon="save_rounded", height=40,
                                           bgcolor=ft.colors.BLUE_ACCENT_700,
-                                          color=ft.colors.WHITE)
+                                          color=ft.colors.WHITE,
+                                          on_click=self.save_settings)
                     ], alignment=ft.MainAxisAlignment.END, spacing=10),
                 ]),
                 bgcolor=ft.colors.BLUE_GREY_900,
@@ -93,6 +96,52 @@ class SettingsManager(ft.Row):
             ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN, expand=1,
                vertical_alignment=ft.CrossAxisAlignment.START)
         ]
+
+    def save_settings(self, e):
+        """ Event for saving the settings to a JSON config file. """
+        # Get first the data from the fields
+        date_col = self._date_col.current.value
+        date_name = self._date_name.current.value
+        start_time_col = self._start_time_col.current.value
+        start_time_name = self._start_time_name.current.value
+        end_time_col = self._end_time_col.current.value
+        end_time_name = self._end_time_name.current.value
+
+        # Put it into a dictionary for transforming into a json file
+        final_data= {"required": {
+            date_col: date_name,
+            start_time_col: start_time_name,
+            end_time_col: end_time_name
+        }}
+
+        # Save the dictionary into a json file
+        file_path = Reader.BASE_PATH / "config/settings.json"
+        with open(file_path, "w") as outfile:
+            json.dump(final_data, outfile)
+
+        # Create the bottom sheet control for displaying succesfull save
+        bottom_sheet = ft.BottomSheet(content=ft.Container(
+            padding=25,
+            content=ft.Column([
+                ft.Row([
+                    ft.Icon("save_rounded", size=40,
+                            color=ft.colors.GREEN_900),
+                    ft.Text("Settings has been successfully saved on config folder.",
+                            weight=ft.FontWeight.BOLD,
+                            color=ft.colors.WHITE, size=16)
+                ]),
+                ft.Row([
+                    ft.Text("NOTE: Redownload previously added GSheet URLs "
+                            "if you changed\nthe column settings to update its "
+                            "saved data format accordingly.",
+                            italic=True, size=13, color=ft.colors.WHITE70),
+                    ft.ElevatedButton(content=ft.Text("OK", color=ft.colors.WHITE),
+                                  bgcolor=ft.colors.GREEN_700,
+                                  on_click=lambda a: a.page.close(bottom_sheet)),
+                ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+            ], tight=True)
+        ), bgcolor=ft.colors.GREEN_ACCENT_700)
+        e.page.open(bottom_sheet)
 
 
 #----------------------------------
