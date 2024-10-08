@@ -26,6 +26,9 @@ class SettingsManager(ft.Row):
         """
         super().__init__()
 
+        # File Path of the settings config
+        self.settings_path = Reader.BASE_PATH / "config/settings.json"
+
         # Declaration of Flet control references
         self._date_col = ft.Ref[ft.TextField]()
         self._date_name = ft.Ref[ft.TextField]()
@@ -44,6 +47,15 @@ class SettingsManager(ft.Row):
                                 weight=ft.FontWeight.BOLD,
                                 color=ft.colors.WHITE70)
                     ], alignment=ft.MainAxisAlignment.START),
+
+                    ft.Container(content=ft.Row([
+                        ft.Text("", expand=1),
+                        ft.Text("COLUMN", expand=1, size=12,
+                                text_align=ft.TextAlign.CENTER),
+                        ft.Text("NAME", expand=2, size=12,
+                                text_align=ft.TextAlign.CENTER)
+                    ]), bgcolor=ft.colors.BLUE_GREY_700,
+                        margin=ft.margin.only(0, 5, 0, -10)),
 
                     # Container for the Required Fields
                     ft.Container(content=ft.Column([
@@ -97,6 +109,9 @@ class SettingsManager(ft.Row):
                vertical_alignment=ft.CrossAxisAlignment.START)
         ]
 
+        # Load the existing saved settings.json config
+        self.load_settings()
+
     def save_settings(self, e):
         """ Event for saving the settings to a JSON config file. """
         # Get first the data from the fields
@@ -108,16 +123,15 @@ class SettingsManager(ft.Row):
         end_time_name = self._end_time_name.current.value
 
         # Put it into a dictionary for transforming into a json file
-        final_data= {"required": {
-            date_col: date_name,
-            start_time_col: start_time_name,
-            end_time_col: end_time_name
-        }}
+        final_data= {"required": [
+            [date_col, date_name],
+            [start_time_col, start_time_name],
+            [end_time_col, end_time_name]
+        ]}
 
         # Save the dictionary into a json file
-        file_path = Reader.BASE_PATH / "config/settings.json"
-        with open(file_path, "w") as outfile:
-            json.dump(final_data, outfile)
+        with open(self.settings_path, "w") as outfile:
+            outfile.write(json.dumps(final_data))
 
         # Create the bottom sheet control for displaying succesfull save
         bottom_sheet = ft.BottomSheet(content=ft.Container(
@@ -142,6 +156,20 @@ class SettingsManager(ft.Row):
             ], tight=True)
         ), bgcolor=ft.colors.GREEN_ACCENT_700)
         e.page.open(bottom_sheet)
+
+    def load_settings(self):
+        """ Loads the saved config settings data to the settings UI. """
+        if self.settings_path.exists():
+            with open(self.settings_path) as file:
+                settings_data = json.loads(file.read())
+                # Assign the required fields to its corresponding fields
+                required = settings_data["required"]
+                self._date_col.current.value = required[0][0]
+                self._date_name.current.value = required[0][1]
+                self._start_time_col.current.value = required[1][0]
+                self._start_time_name.current.value = required[1][1]
+                self._end_time_col.current.value = required[2][0]
+                self._end_time_name.current.value = required[2][1]
 
 
 #----------------------------------
