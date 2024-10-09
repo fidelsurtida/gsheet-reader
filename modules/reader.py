@@ -79,6 +79,16 @@ class Reader:
         # Get the settings saved configuration data
         settings = SettingsManager.get_settings_data()
         date_col = settings["required"][0]
+        start_col = settings["required"][1]
+        end_col = settings["required"][2]
+        task_col = settings["other_columns"][0]
+        proccessed_col = settings["other_columns"][1]
+        sorted_cols = [start_col[0], end_col[0],
+                       task_col[0], proccessed_col[0]]
+        sorted_cols.sort()
+        # Create a list of sorted columns to use later in merging data
+        min_col, max_col = sorted_cols[0], sorted_cols[-1]
+        col_range = [chr(i) for i in range(ord(min_col), ord(max_col) + 1)]
 
         # Get the worksheets with only names starting with identifier
         sheets_names = []
@@ -122,17 +132,19 @@ class Reader:
                 date_time_render_option=DateTimeOption.serial_number,
                 value_render_option=ValueRenderOption.unformatted)
             time.sleep(1)
-            data = sheet.get(range_name="F:J",
+            # Get and merge the column letters with the data
+            data = sheet.get(range_name=f"{min_col}:{max_col}",
                              major_dimension=Dimension.cols)
+            data_merged = dict(zip(col_range, data))
             time.sleep(2)
 
             # Select only the required columns and assign to each variable
             # Also disregard the first 5 initial row of it's column
             date_times = datedata[0][5:]
-            task_names = data[0][5:]
-            num_processed = data[2][5:]
-            start_times = data[3][5:]
-            end_times = data[4][5:]
+            task_names = data_merged[task_col[0]][5:]
+            num_processed = data_merged[proccessed_col[0]][5:]
+            start_times = data_merged[start_col[0]][5:]
+            end_times = data_merged[end_col[0]][5:]
             durations = []
 
             # Format the times to datetime object
@@ -207,9 +219,18 @@ class Reader:
         data_path = path / "data"
         path.mkdir(exist_ok=True)
 
+        # Get the settings saved configuration data
+        settings = SettingsManager.get_settings_data()
+        date_name = settings["required"][0][1]
+        start_name = settings["required"][1][1]
+        end_name = settings["required"][2][1]
+        task_name = settings["other_columns"][0][1]
+        proccessed_name = settings["other_columns"][1][1]
+
         # Header column names for the CSV
-        headers = ["Department", "Account", "Name", "Date",
-                   "Task Done", "Processed", "START", "END", "DURATION"]
+        headers = ["Department", "Account", "Name", date_name,
+                   task_name, proccessed_name, start_name,
+                   end_name, "DURATION"]
 
         # Reset and prime the progress bar
         progress.reset()
