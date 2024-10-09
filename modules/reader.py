@@ -21,6 +21,7 @@ import subprocess
 from datetime import datetime, timedelta
 from pathlib import Path
 from gspread.utils import Dimension, DateTimeOption, ValueRenderOption
+from controls.settingsmanager import SettingsManager
 
 # WORKING SHEETS URL
 # "https://docs.google.com/spreadsheets/d/1xDew94vfttSPIZ39nA7G7V9kGs_76BI6g-URrsKHP_A/"
@@ -75,6 +76,10 @@ class Reader:
         except PermissionError:
             return gspread.exceptions.GSpreadException
 
+        # Get the settings saved configuration data
+        settings = SettingsManager.get_settings_data()
+        date_col = settings["required"][0]
+
         # Get the worksheets with only names starting with identifier
         sheets_names = []
         progress(left="Filtering Worksheet Names...", value=0.05)
@@ -112,7 +117,8 @@ class Reader:
             progress(left="Downloading", center=sheet_owner,
                      right="Sheet Data...", value=cur_prog)
             datedata = sheet.get(
-                range_name="E:E",  major_dimension=Dimension.cols,
+                range_name=f"{date_col[0]}:{date_col[0]}",
+                major_dimension=Dimension.cols,
                 date_time_render_option=DateTimeOption.serial_number,
                 value_render_option=ValueRenderOption.unformatted)
             time.sleep(1)
