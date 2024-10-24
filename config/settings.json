@@ -1,1 +1,1 @@
-{"required": [["E", "Date"], ["I", "Time Started"], ["J", "Time Ended"]], "other_columns": [["F", "Task Name"], ["H", "Proccessed Tasks"]]}
+{"required": [["E", "test"], ["I", "Time Started"], ["J", "Time Ended"]], "other_columns": [["F", "Task Name"], ["H", "Proccessed Tasks"]]}

@@ -160,7 +160,28 @@ class SettingsManager(ft.Row):
         task_col = self._task_col.current.value
         task_name = self._task_name.current.value
         proccessed_col = self._proccessed_col.current.value
-        proccessed_name =self._proccessed_name.current.value
+        proccessed_name = self._proccessed_name.current.value
+
+        req_var = []
+
+        # Check if data fields are empty
+        if not date_col: req_var.append("Date Column Letter")
+        if not date_name: req_var.append("Date Column Name")
+        if not start_time_col: req_var.append("Start Time Column Letter")
+        if not start_time_name: req_var.append("Start Time Column Name")
+        if not end_time_col: req_var.append("End Time Column Letter")
+        if not end_time_name: req_var.append("End Time Column Name")
+        if not task_col: req_var.append("Task Name Column Letter")
+        if not task_name: req_var.append("Task Name Column Name")
+        if not proccessed_col: req_var.append("Task Count Column Letter")
+        if not proccessed_name: req_var.append("Task Count Column Name")
+
+        # Create the bottom sheet control for displaying the list of empty fields after save
+        if req_var:
+            req_var = [f"{str_var} is required." for str_var in req_var]
+            error_bottom_sheet = RequiredMessage(errors=req_var)
+            e.page.open(error_bottom_sheet)
+            return e.page
 
         # Put it into a dictionary for transforming into a json file
         final_data = {
@@ -259,3 +280,33 @@ class FieldContainer(ft.Row):
                          color=ft.colors.BLACK,
                          text_size=14, expand=2, height=40)
         ]
+
+class RequiredMessage(ft.BottomSheet):
+
+    def __init__(self, *, errors):
+
+        content_var = ft.Container(
+            padding=25,
+            content=ft.Column([
+                ft.Row([
+                    ft.Icon("warning_rounded", size=40,
+                            color=ft.colors.RED_ACCENT_100),
+                    ft.Text("\n".join(errors),
+                            weight=ft.FontWeight.BOLD,
+                            color=ft.colors.WHITE, size=14)
+                ], vertical_alignment=ft.CrossAxisAlignment.START),
+                ft.Row([
+                    ft.Text("NOTE: Please fill in the empty spaces before saving.",
+                            italic=True, size=13, color=ft.colors.WHITE70),
+                    ft.ElevatedButton(content=ft.Text("OK", color=ft.colors.WHITE),
+                                      bgcolor=ft.colors.RED_700,
+                                      on_click=lambda a: a.page.close(self)),
+                ], alignment=ft.MainAxisAlignment.SPACE_BETWEEN)
+            ], tight=True, width=400)
+        )
+
+        super().__init__(content_var)
+        self.bgcolor = ft.colors.RED_ACCENT_700
+
+
+
